@@ -9,7 +9,7 @@ Author: SIL International
 Author URI: http://www.sil.org/
 Text Domain: sil_dictionary
 Domain Path: /lang/
-Version: v. 7.6.7
+Version: v. 8.2.2
 License: GPL v2 - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 */
 
@@ -30,7 +30,12 @@ License: GPL v2 - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
  */
  //don't display notices like undefined variables
 error_reporting(E_ERROR | E_WARNING | E_PARSE);
-
+/*
+add_action( 'plugins_loaded', function()
+{
+	error_log("webonary\n", 3, "/tmp/my-errors.log");
+});
+*/
 // don't load directly
 if ( ! defined('ABSPATH') )
 	die( '-1' );
@@ -39,15 +44,17 @@ global $wpdb;
 
 // User capability. I don't know why this value works in add_management_page. May want to revisit this.
 define( 'SIL_DICTIONARY_USER_CAPABILITY', '10' );
+define('FONTFOLDER', "/wp-content/uploads/fonts/");
 define('SEARCHTABLE', $wpdb->prefix . 'sil_search');
 define('REVERSALTABLE', $wpdb->prefix . 'sil_reversals');
-
 
 /*
  * Dependencies
  */
  //To update code from Github through Wordpress Dashboard
 //require_once( dirname( __FILE__ ) . '/updater.php');
+require_once( dirname( __FILE__ ) . '/include/class_info.php' );
+require_once( dirname( __FILE__ ) . '/include/class_utilities.php' );
 // Infractstructure management: add and remove custom table(s) and custom taxonomies.
 require_once( dirname( __FILE__ ) . '/include/infrastructure.php' );
 // Configure Webonary Settings
@@ -89,16 +96,19 @@ require_once( dirname( __FILE__ ) . '/include/modifycontent.php' );
 
 
 /*
- * Search hooks
+ * Search hook
  */
-add_filter('posts_fields', 'sil_dictionary_select_fields');
-add_filter('posts_distinct', 'sil_dictionary_select_distinct');
-add_filter('posts_join', 'sil_dictionary_custom_join');
-add_filter('posts_where', 'sil_dictionary_custom_where');
-add_filter('posts_orderby', 'sil_dictionary_custom_order_by');
-add_action('search_message', 'sil_dictionary_custom_message');
-add_action('pre_get_posts','no_standard_sort');
+add_filter('search_message', 'sil_dictionary_custom_message');
 
+add_filter('posts_request','replace_default_search_filter');
+
+if( !is_page())
+{
+	add_action('wp_enqueue_scripts', 'my_enqueue_css', 1000);
+}
+
+
+//add_action('pre_get_posts','no_standard_sort');
 add_action( 'preprocess_comment' , 'preprocess_comment_add_type' );
 
 function add_rewrite_rules($aRules) {

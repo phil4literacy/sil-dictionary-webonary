@@ -1,31 +1,60 @@
 <?php
-function webonary_api_init() {
-	global $webonary_api_mytype;
+//$testclass = new Slug_Custom_Route();
+$apiClass = new Webonary_API_MyType();
 
-	$webonary_api_mytype = new Webonary_API_MyType();
-	add_filter( 'json_endpoints', array( $webonary_api_mytype, 'register_routes' ) );
-}
-
-add_action( 'wp_json_server_before_serve', 'webonary_api_init' );
+add_action( 'rest_api_init', array( $apiClass, 'register_new_routes' ) );
 
 class Webonary_API_MyType {
-    public function register_routes( $routes ) {
-    	//creates a route like this: https://test.webonary.org/wp-json/webonary/import
-        $routes['/webonary/import'] = array(
-        	array( array( $this, 'import'), WP_JSON_Server::CREATABLE | WP_JSON_Server::ACCEPT_RAW ),
-        );
 
-        return $routes;
+	function register_new_routes() {
+
+    	$namespace = 'webonary';
+
+    	register_rest_route( $namespace, '/import', array(
+    			'methods' => 'POST' | WP_REST_Server::CREATABLE,
+    			'callback' => array( $this, 'import' ),
+    		)
+    	);
+
+    	//this allows one to make a query like this:
+    	//http://webonary.localhost/lubwisi/wp-json/webonary/query/dog/en
+    	//language parameter is optional
+    	register_rest_route( $namespace, '/query/(?P<term>\w+)(?:/(?P<lang>\w+))?', array(
+    			'methods' => 'GET' | WP_REST_Server::READABLE,
+    			'callback' => array( $this, 'query' ),
+    			'args'                => array(),
+		    )
+    	);
+
     }
 
-	public function import($_headers)
+    public function query($request)
+    {
+    	$data = get_indexed_entries($request['term'], $request['lang']);
+
+    	return new WP_REST_Response( $data, 200 );
+    }
+
+	public function import($_headers, $newAPI = true)
 	{
-		$authenticated = $this->verifyAdminPrivileges($email, $userid);
+		$username = "";
+		$password = "";
+		if($newAPI)
+		{
+			$myHeader = $_headers->get_headers();
+			$userstring = base64_decode(str_replace("Basic ", "", $myHeader['authorization'][0]));
+			$arrUser = explode(":", $userstring);
+			$username = $arrUser[0];
+			$password = $arrUser[1];
+		}
+
+		$user = Webonary_Utility::verifyAdminPrivileges($username, $password);
 
 		$message = "The export to Webonary is completed.\n";
 		$message .= "Go here to configure more settings: " . get_site_url() . "/wp-admin/admin.php?page=webonary";
 
-		if($authenticated){
+		if($user){
+			$userid = $user->ID;
 
 			$arrDirectory = wp_upload_dir();
 			$uploadPath = $arrDirectory['path'];
@@ -33,7 +62,7 @@ class Webonary_API_MyType {
 
 			$zipFolderPath = $uploadPath . "/" . str_replace(".zip", "", $_FILES['file']['name']);
 
-			$unzipped = $this->unzip($_FILES['file'], $uploadPath, $zipFolderPath);
+			$unzipped = Webonary_Utility::unzip($_FILES['file'], $uploadPath, $zipFolderPath);
 
 			//program can be closed now, the import will run in the background
 			flush();
@@ -46,7 +75,7 @@ class Webonary_API_MyType {
 				//moving and renaming configured style sheet file
 				if(file_exists($zipFolderPath . "/configured.css"))
 				{
-					$fontClass = new fontMonagment();
+					$fontClass = new fontManagment();
 					$fontClass->set_fontFaces($zipFolderPath . "/configured.css", $uploadPath);
 
 					copy($zipFolderPath . "/configured.css", $uploadPath . "/imported-with-xhtml.css");
@@ -75,28 +104,28 @@ class Webonary_API_MyType {
 				if(file_exists($uploadPath))
 				{
 					//first delete any existing files
-					$this->recursiveRemoveDir($uploadPath . "/images/thumbnail");
-					$this->recursiveRemoveDir($uploadPath . "/images/original");
+					Webonary_Utility::recursiveRemoveDir($uploadPath . "/images/thumbnail");
+					Webonary_Utility::recursiveRemoveDir($uploadPath . "/images/original");
 					if(file_exists($zipFolderPath . "/AudioVisual"))
 					{
-						$this->recursiveRemoveDir($uploadPath . "/audio");
-						$this->recursiveRemoveDir($uploadPath . "/AudioVisual");
+						Webonary_Utility::recursiveRemoveDir($uploadPath . "/audio");
+						Webonary_Utility::recursiveRemoveDir($uploadPath . "/AudioVisual");
 					}
 					//then copy everything under AudioVisual and pictures
-					$this->recursiveCopy($zipFolderPath . "/AudioVisual", $uploadPath . "/AudioVisual");
-					$this->recursiveRemoveDir($zipFolderPath . "/AudioVisual");
+					Webonary_Utility::recursiveCopy($zipFolderPath . "/AudioVisual", $uploadPath . "/AudioVisual");
+					Webonary_Utility::recursiveRemoveDir($zipFolderPath . "/AudioVisual");
 
-					$this->recursiveCopy($zipFolderPath . "/pictures", $uploadPath . "/images/original");
+					Webonary_Utility::recursiveCopy($zipFolderPath . "/pictures", $uploadPath . "/images/original");
 					if(file_exists($zipFolderPath . "/pictures/thumbnail"))
 					{
-						$this->recursiveCopy($zipFolderPath . "/pictures/thumbnail", $uploadPath . "/images/thumbnail");
+						Webonary_Utility::recursiveCopy($zipFolderPath . "/pictures/thumbnail", $uploadPath . "/images/thumbnail");
 					}
 					else
 					{
-						$this->resize_image ( $uploadPath . "/images/original", 96, 96, $uploadPath . "/images/thumbnail" );
+						Webonary_Utility::resize_image ( $uploadPath . "/images/original", 150, 150, $uploadPath . "/images/thumbnail" );
 					}
 
-					$this->recursiveRemoveDir($zipFolderPath . "/pictures");
+					Webonary_Utility::recursiveRemoveDir($zipFolderPath . "/pictures");
 
 				}
 
@@ -133,183 +162,10 @@ class Webonary_API_MyType {
 		}
 		else
 		{
-			echo "authentication failed\n";
+			$message = "authentication failed\n";
 			flush();
 		}
 
 		return;
-	}
-
-	// Receive upload. Unzip it to uploadPath. Remove upload file.
-	public function unzip($zipfile, $uploadPath, $zipFolderPath)
-	{
-		$overrides = array( 'test_form' => false, 'test_type' => false );
-		$file = wp_handle_upload($zipfile, $overrides);
-
-		if (isset( $file['error']))
-		{
-			echo "Error: Upload failed: " . $file['error'] . "\n";
-			unlink($uploadPath . "/" . $zipfile['name']);
-			return false;
-		}
-
-		error_log("zip file: " . $uploadPath . "/" . $_FILES['file']['name']);
-		error_log(WP_CONTENT_DIR . "/archives");
-
-		if(file_exists(WP_CONTENT_DIR . "/archives"))
-		{
-			error_log("copy zip file");
-			copy($uploadPath . "/" . $_FILES['file']['name'], WP_CONTENT_DIR . "/archives/" . $_FILES['file']['name']);
-		}
-
-		$zip = new ZipArchive;
-		$res = $zip->open($uploadPath . "/" . $zipfile['name']);
-		if ($res === FALSE)
-		{
-			echo "Error: " . $zipfile['name'] . " isn't a valid zip file\n";
-			unlink($uploadPath . "/" . $zipfile['name']);
-			return false;
-		}
-
-		$unzip_success = $zip->extractTo($zipFolderPath);
-		$zip->close();
-		if(!$unzip_success)
-		{
-			echo "Error: couldn't extract zip file to " . $uploadPath;
-			unlink($uploadPath . "/" . $zipfile['name']);
-			return false;
-		}
-
-		error_log("zip file extracted");
-		echo "zip file extracted successfully\n";
-		unlink($uploadPath . "/" . $zipfile['name']);
-		return true;
-	}
-
-	// Function to remove folders and files
-    function recursiveRemoveDir($dir) {
-        if (is_dir($dir)) {
-            $files = scandir($dir);
-            foreach ($files as $file)
-            {
-                if ($file != "." && $file != "..") $this->recursiveRemoveDir("$dir/$file");
-                error_log("removed: " . $dir);
-            	rmdir($dir);
-            }
-        }
-        else if (file_exists($dir)) unlink($dir);
-    }
-
-	// Function to Copy folders and files
-    function recursiveCopy($src, $dst) {
-        if (is_dir ( $src )) {
-        	if(!file_exists($dst))
-        	{
-        		error_log("create folder: " . $dst);
-            	mkdir ( $dst );
-        	}
-            $files = scandir ( $src );
-            foreach ( $files as $file )
-                if ($file != "." && $file != "..")
-                    $this->recursiveCopy ( "$src/$file", "$dst/$file" );
-        } else if (file_exists ( $src )) {
-            copy ( $src, $dst );
-        	error_log("moved: " . $src . " to " . $dst);
-        }
-    }
-
-    function resize_image($src, $w, $h, $dst) {
-
-    	if(!file_exists($dst))
-    	{
-    		mkdir ( $dst );
-    	}
-    	$files = scandir ( $src );
-    	foreach ( $files as $file )
-    	{
-    		if ($file != "." && $file != "..")
-    		{
-    			list($width, $height) = getimagesize($src . "/"  . $file);
-
-    			$r = $width / $height;
-    			$newwidth = $h*$r;
-    			$newheight = $h;
-
-    			if($newheight <= $height && $newwidth <= $width)
-    			{
-	    			$ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
-
-	    			if($ext == "png")
-	    			{
-	    				$src_image = imagecreatefrompng($src . "/" . $file);
-	    			}
-	    			elseif($ext == "gif")
-	    			{
-	    				$src_image = imagecreatefromgif($src . "/" . $file);
-	    			}
-	    			else
-	    			{
-	    				$src_image = imagecreatefromjpeg($src . "/" . $file);
-	    			}
-	    			$dst_image  = imagecreatetruecolor($newwidth, $newheight);
-	    			imagecopyresized($dst_image, $src_image, 0, 0, 0, 0, $newwidth, $newheight, $width, $height );
-
-	    			if($ext == "png")
-	    			{
-	    				imagepng($dst_image, $dst . "/" . $file);
-	    			}
-	    			elseif($ext == "gif")
-	    			{
-	    				imagegif($dst_image, $dst . "/" . $file);
-	    			}
-	    			else
-	    			{
-	    				imagejpeg($dst_image, $dst . "/" . $file, 90);
-	    			}
-    			}
-    			else
-    			{
-    				copy ( $src . "/" . $file, $dst . "/" . $file );
-    			}
-    			echo $dst . "/" . $file . "\n";
-    		}
-    	}
-    }
-
-	public function verifyAdminPrivileges(&$email = "", &$userid = 0)
-	{
-		global $wpdb;
-
-		$user = wp_authenticate( $_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW'] );
-
-		if(isset($user->ID))
-		{
-			$sql = "SELECT meta_value AS userrole FROM wp_usermeta " .
-				   " WHERE (user_id = " . $user->ID . " AND meta_key = 'wp_" . get_current_blog_id()  . "_capabilities') OR " .
-				   	" (user_id = " . $user->ID . " AND meta_key = 'wp_capabilities')";
-
-
-			$roleSerialized = $wpdb->get_var($sql);
-			$userrole = unserialize($roleSerialized);
-
-			if($userrole['administrator'] == true)
-			{
-				$user_info = get_userdata($user->ID);
-				$userid = $user->ID;
-				$email = $user_info->user_email;
-				return true;
-			}
-			else
-			{
-				echo "User doesn't have permission to import data to this Webonary site\n";
-				return false;
-			}
-
-		}
-		else
-		{
-			echo "Wrong username or password.\n";
-			return false;
-		}
 	}
 }

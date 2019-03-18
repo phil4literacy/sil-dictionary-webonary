@@ -54,6 +54,7 @@ function install_sil_dictionary_infrastructure() {
 	*/
 	if(is_admin())
 	{
+		create_custom_relevance();
 		create_search_tables();
 		create_reversal_tables();
 		set_options();
@@ -68,13 +69,30 @@ function install_sil_dictionary_infrastructure() {
 }
 
 //---------------------------------------------------------------------------//
+
+function create_custom_relevance() {
+	global $wpdb;
+
+	$tableCustomRelevance = $wpdb->prefix . "custom_relevance";
+	$sql = "CREATE TABLE IF NOT EXISTS " . $tableCustomRelevance . "(
+			`class` varchar(50),
+			`relevance` tinyint,
+			PRIMARY KEY  (`class`)
+			)";
+	require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
+
+	dbDelta( $sql );
+
+}
+
+//---------------------------------------------------------------------------//
 function create_reversal_tables () {
 	global $wpdb;
 
 	$table = REVERSALTABLE;
 	$sql = "CREATE TABLE `" . $table . "` (
 		`id` varchar(50) NOT NULL,
-		`language_code` varchar(20) CHARACTER SET " . COLLATION . " COLLATE " . FULLCOLLATION . ",
+		`language_code` varchar(30) CHARACTER SET " . COLLATION . " COLLATE " . FULLCOLLATION . ",
 		`reversal_head` longtext CHARACTER SET " . COLLATION . " COLLATE " . FULLCOLLATION . ",
 		`reversal_content` longtext CHARACTER SET " . COLLATION . " COLLATE " . FULLCOLLATION . ",
 		`sortorder` INT NOT NULL DEFAULT '0',
@@ -93,12 +111,13 @@ function create_search_tables () {
 	$table = SEARCHTABLE;
 	$sql = "CREATE TABLE `" . $table . "` (
 		`post_id` bigint(20) NOT NULL,
-		`language_code` varchar(20),
+		`language_code` varchar(30),
 		`relevance` tinyint,
 		`search_strings` longtext,
+		`class` varchar(50),
 		`subid` INT NOT NULL DEFAULT  '0',
 		`sortorder` INT NOT NULL DEFAULT '0',
-		PRIMARY KEY  (`post_id`, `language_code`, `relevance`, `search_strings` ( 150 )),
+		PRIMARY KEY  (`post_id`, `language_code`, `relevance`, `search_strings` ( 150 ), `class` (50)),
 		INDEX relevance_idx (relevance)
 		) CHARACTER SET " . COLLATION . " COLLATE " . FULLCOLLATION . ";";
 
@@ -328,7 +347,7 @@ function remove_entries ($pinged = null) {
 
 	$import = new sil_pathway_xhtml_Import();
 
-	$catid = $import->get_category_id();
+	$catid = Webonary_Info::category_id();
 
 	//just posts in category "webonary"
 	$sql = "DELETE FROM " . $wpdb->prefix . "posts " .

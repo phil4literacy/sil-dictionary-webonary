@@ -49,26 +49,17 @@ class sil_pathway_xhtml_Import extends WP_Importer {
 	public $verbose;
 
 	/*
-	 * Table and taxonomy attributes
-	 */
-
-	public $search_table_name = SEARCHTABLE;
-	public $reversal_table_name = REVERSALTABLE;
-	public $pos_taxonomy = 'sil_parts_of_speech';
-	public $semantic_domains_taxonomy = 'sil_semantic_domains';
-
-	/*
 	 * Relevance level attributes
 	 */
 
 	public $headword_relevance = 100;
-	public $citationform = 90;
-	public $plural = 80;
+	public $citationform_relevance = 90;
+	public $plural_relevance = 80;
 	public $lexeme_form_relevance = 70;
 	public $variant_form_relevance = 60;
 	public $definition_word_relevance = 50;
 	public $semantic_domain_relevance = 40;
-	public $scientific_name = 35;
+	public $scientific_name_relevance = 35;
 	public $sense_crossref_relevance = 30;
 	public $custom_field_relevance = 20;
 	public $example_sentences_relevance = 10;
@@ -80,46 +71,6 @@ class sil_pathway_xhtml_Import extends WP_Importer {
 	public $dom;
 	public $dom_xpath;
 
-	public $UTF8_ACCENTS = array(
-			'à' => 'a', 'ȁ' => 'a', 'ấ' => 'a', 'ầ' => 'a', 'ẩ' => 'a', 'ǟ' => 'a', 'ǻ' => 'a', 'ặ' => 'ặ',
-			'ȃ' => 'a', 'ǎ' => 'a', 'ȧ' => 'a', 'ǡ' => 'a', 'ḁ' => 'a', 'ạ' => 'a', 'ả' => 'a',
-			'ô' => 'o', 'ď' => 'd', 'ḟ' => 'f', 'ë' => 'e', 'š' => 's', 'ơ' => 'o', 'ẚ' => 'a',
-			'ß' => 'ss', 'ă' => 'a', 'ř' => 'r', 'ț' => 't', 'ň' => 'n', 'ā' => 'a', 'ķ' => 'k',
-			'ŝ' => 's', 'ỳ' => 'y', 'ņ' => 'n', 'ŋ' => 'n', 'ĺ' => 'l', 'ħ' => 'h', 'ṗ' => 'p',
-			'ó' => 'o', 'ȯ' => 'o', 'ɔ' => 'o', 'ȅ' => 'e', 'ẹ' => 'e', 'ẽ' => 'e', 'ȇ' => 'e', 'ȩ' => 'e',
-			'ḕ' => 'e', 'ḗ' => 'e', 'ḙ' => 'e', 'ḛ' => 'e', 'ḝ' => 'e', 'ı' => 'i', 'ǐ' => 'i', 'ĭ' => 'i',
-			'ɨ' => 'i', 'ṓ' => 'o', 'ǒ' => 'o', 'ǫ' => 'o', 'ȱ' => 'o', 'ȱ' => 'o', 'ṏ' => 'o',
-			'ú' => 'u', 'ě' => 'e', 'é' => 'e', 'ç' => 'c', 'ẁ' => 'w', 'ċ' => 'c', 'õ' => 'o',
-			'ǔ' => 'u', 'ȕ' => 'u', 'ṳ' => 'u', 'ṵ' => 'u', 'ṷ' => 'u', 'ṹ' => 'u', 'ṻ' => 'u',
-			'ṡ' => 's', 'ø' => 'o', 'ģ' => 'g', 'ŧ' => 't', 'ș' => 's', 'ė' => 'e', 'ĉ' => 'c',
-			'ś' => 's', 'î' => 'i', 'ű' => 'u', 'ć' => 'c', 'ę' => 'e', 'ŵ' => 'w', 'ṫ' => 't',
-			'ū' => 'u', 'č' => 'c', 'ö' => 'oe', 'è' => 'e', 'ŷ' => 'y', 'ą' => 'a', 'ł' => 'l',
-			'ų' => 'u', 'ů' => 'u', 'ş' => 's', 'ğ' => 'g', 'ļ' => 'l', 'ƒ' => 'f', 'ž' => 'z',
-			'ẃ' => 'w', 'ḃ' => 'b', 'å' => 'a', 'ì' => 'i', 'ï' => 'i', 'ḋ' => 'd', 'ť' => 't',
-			'ŗ' => 'r', 'ä' => 'ae', 'í' => 'i', 'ŕ' => 'r', 'ê' => 'e', 'ü' => 'ue', 'ò' => 'o', 'ꝍ' => 'o',
-			'ē' => 'e', 'ñ' => 'n', 'ń' => 'n', 'ĥ' => 'h', 'ĝ' => 'g', 'đ' => 'd', 'ĵ' => 'j',
-			'ÿ' => 'y', 'ũ' => 'u', 'ŭ' => 'u', 'ư' => 'u', 'ţ' => 't', 'ý' => 'y', 'ő' => 'o', 'ʉ' => 'u',
-			'â' => 'a', 'ľ' => 'l', 'ẅ' => 'w', 'ż' => 'z', 'ī' => 'i', 'ã' => 'a', 'ġ' => 'g',
-			'ṁ' => 'm', 'ō' => 'o', 'ĩ' => 'i', 'ù' => 'u', 'į' => 'i', 'ź' => 'z', 'á' => 'a',
-			'û' => 'u', 'þ' => 'th', 'ð' => 'dh', 'æ' => 'ae', 'µ' => 'u', 'ĕ' => 'e', 'ɛ' => 'e',
-			'έ' => 'e', 'ἐ' => 'e', 'ἒ' => 'e', 'ἑ' => 'e', 'ἕ'  => 'e', 'ἓ' => 'e', 'ὲ' => 'e', 'ε' => 'e',
-			'À' => 'A', 'Ô' => 'O', 'Ď' => 'D', 'Ḟ' => 'F', 'Ë' => 'E', 'Š' => 'S', 'Ơ' => 'O',
-			'Ă' => 'A', 'Ř' => 'R', 'Ț' => 'T', 'Ň' => 'N', 'Ā' => 'A', 'Ķ' => 'K', 'ə' => 'e',
-			'Ŝ' => 'S', 'Ỳ' => 'Y', 'Ņ' => 'N', 'Ĺ' => 'L', 'Ħ' => 'H', 'Ṗ' => 'P', 'Ó' => 'O',
-			'Ú' => 'U', 'Ě' => 'E', 'É' => 'E', 'Ç' => 'C', 'Ẁ' => 'W', 'Ċ' => 'C', 'Õ' => 'O',
-			'Ṡ' => 'S', 'Ø' => 'O', 'Ģ' => 'G', 'Ŧ' => 'T', 'Ș' => 'S', 'Ė' => 'E', 'Ĉ' => 'C',
-			'Ś' => 'S', 'Î' => 'I', 'Ű' => 'U', 'Ć' => 'C', 'Ę' => 'E', 'Ŵ' => 'W', 'Ṫ' => 'T',
-			'Ū' => 'U', 'Č' => 'C', 'Ö' => 'Oe', 'È' => 'E', 'Ŷ' => 'Y', 'Ą' => 'A', 'Ł' => 'L',
-			'Ų' => 'U', 'Ů' => 'U', 'Ş' => 'S', 'Ğ' => 'G', 'Ļ' => 'L', 'Ƒ' => 'F', 'Ž' => 'Z',
-			'Ẃ' => 'W', 'Ḃ' => 'B', 'Å' => 'A', 'Ì' => 'I', 'Ï' => 'I', 'Ḋ' => 'D', 'Ť' => 'T',
-			'Ŗ' => 'R', 'Ä' => 'Ae', 'Í' => 'I', 'Ŕ' => 'R', 'Ê' => 'E', 'Ü' => 'Ue', 'Ò' => 'O',
-			'Ē' => 'E', 'Ñ' => 'N', 'Ń' => 'N', 'Ŋ' => 'N', 'Ĥ' => 'H', 'Ĝ' => 'G', 'Đ' => 'D', 'Ĵ' => 'J',
-			'Ÿ' => 'Y', 'Ũ' => 'U', 'Ŭ' => 'U', 'Ư' => 'U', 'Ţ' => 'T', 'Ý' => 'Y', 'Ő' => 'O',
-			'Â' => 'A', 'Ľ' => 'L', 'Ẅ' => 'W', 'Ż' => 'Z', 'Ī' => 'I', 'Ã' => 'A', 'Ġ' => 'G',
-			'Ṁ' => 'M', 'Ō' => 'O', 'Ĩ' => 'I', 'Ù' => 'U', 'Į' => 'I', 'Ź' => 'Z', 'Á' => 'A',
-			'Û' => 'U', 'Þ' => 'Th', 'Ð' => 'Dh', 'Æ' => 'Ae', 'Ĕ' => 'E', '…' => '...', '’' => '\'',
-			'–' => '-', '“' => '"', 'ʼ' => '\''
-	);
 
 	//-----------------------------------------------------------------------------//
 
@@ -448,6 +399,11 @@ class sil_pathway_xhtml_Import extends WP_Importer {
 	function convert_semantic_domains_to_links($post_id, $doc, $field, $termid) {
 		global $wpdb;
 
+		if(empty($field))
+		{
+			return false;
+		}
+
 		$newelement = $doc->createElement('span');
 
 		$allNodes = "";
@@ -484,272 +440,6 @@ class sil_pathway_xhtml_Import extends WP_Importer {
 		echo '</div>';
 	}
 
-	function getArrFieldQueries($step = 0)
-	{
-		if($_GET['step'] >= 2 || $step >= 2)
-		{
-			$querystart = "//span";
-		}
-		else
-		{
-			$querystart = ".//xhtml:span";
-		}
-
-		//$arrFieldQueries[0] = $querystart . '[@class="headword"]|//*[@class="headword_L2"]|//*[@class="headword-minor"]';
-		$arrFieldQueries[0] = '//div[@class="entry"]/span[@class="mainheadword"]/span|//div[@class="entry"]/span[@class="lexemeform"]|//div[@class="mainentrycomplex"]/span[@class="headword"]|//div[@class="entry"]/*[@class="headword"]|//div[@class="minorentry"]/span[@class="headword"]|//div[@class="minorentryvariant"]/span[@class="headword"]|//div[@class="minorentrycomplex"]/span[@class="headword"]|./*[@class="headword_L2"]|//span[@class="headword-minor"]';
-		$arrFieldQueries[1] = $querystart . '[@class = "headword-sub"]|' . $querystart . '[starts-with(@class,"subentry")]/*[@class="headword"]';
-		$arrFieldQueries[2] = $querystart . '[contains(@class, "LexemeForm")]|' . $querystart . '[contains(@class, "lexemeform")]';
-		//$arrFieldQueries[3] = $querystart . '[@class = "definition"]|//*[@class = "definition_L2"]|//*[@class = "definition-minor"]';
-		$arrFieldQueries[3] = $querystart . '[starts-with(@class,"definition")]/span|' . $querystart . '[starts-with(@class,"gloss")]/span';
-		$arrFieldQueries[4] = $querystart . '[starts-with(@class,"definition-sub")]'; //REMOVE WITH FLEX 8.3
-		$arrFieldQueries[5] = $querystart . '[@class = "example"]/span[@lang]';
-		$arrFieldQueries[6] = $querystart . '[@class = "translation"]/span[@lang]';
-		$arrFieldQueries[7] = $querystart . '[starts-with(@class,"LexEntry-") and not(contains(@class, "LexEntry-publishRoot-DefinitionPub_L2"))]/span';
-		$arrFieldQueries[8] = $querystart . '[@class = "variantref-form"]';
-		$arrFieldQueries[9] = $querystart . '[@class = "variantref-form-sub"]';
-		$arrFieldQueries[10] = $querystart . '[@class = "lexsensereference"]//span[@lang]';
-		$arrFieldQueries[11] = $querystart . '[@class = "scientificname"]|' . $querystart . '[@class = "scientific-name"]';
-		$arrFieldQueries[12] = $querystart . '[@class = "plural"]';
-		$arrFieldQueries[13] = $querystart . '[@class = "citationform"]';
-
-		return $arrFieldQueries;
-	}
-
-	function get_category_id() {
-		global $wpdb;
-
-		$catid = $wpdb->get_var( "
-			SELECT term_id
-			FROM $wpdb->terms
-			WHERE slug LIKE 'webonary'");
-
-		if(!isset($catid))
-		{
-			$catid = 0;
-		}
-
-		return $catid;
-	}
-
-	function get_duplicate($postid, $searchstring, $relevance, $lang) {
-		global $wpdb;
-
-		$isDuplicate = false;
-
-		$duplicatePostId = $wpdb->get_var( "
-			SELECT post_id
-			FROM $this->search_table_name
-			WHERE post_id = " . $postid . " AND search_strings = '" . addslashes($searchstring) .
-			"' AND relevance = ". $relevance . " AND language_code = '" . $lang . "'");
-
-		if($duplicatePostId == $postid)
-		{
-			$isDuplicate = true;
-		}
-
-		return $isDuplicate;
-	}
-
-	function get_import_status() {
-		global $wpdb;
-		$status = "";
-
-		if(get_option("useSemDomainNumbers") == 0)
-		{
-			$sql = "SELECT COUNT(taxonomy) AS sdCount FROM " . $wpdb->prefix  . "term_taxonomy WHERE taxonomy LIKE 'sil_semantic_domains'";
-
-			$sdCount = $wpdb->get_var($sql);
-
-			if($sdCount > 0)
-			{
-				$status .= "<br>";
-				$status .= "<span style=\"color:red;\">It appears you imported semantic domains without the domain numbers. Please go to Tools -> Configure -> Dictionary.. in FLEx and check \"Abbrevation\" under Senses/Semantic Domains.</span><br>";
-				$status .= "Tip: You can hide the domain numbers from displaying, <a href=\" https://www.webonary.org/help/tips-tricks/\" target=_\"blank\">see here</a>.";
-				$status .= "<hr>";
-			}
-		}
-
-		$countLinksConverted = 0;
-
-		$catid = $this->get_category_id();
-
-		if($catid == NULL)
-		{
-			$catid = 0;
-		}
-
-		$sql = "SELECT COUNT(pinged) AS entryCount, post_date, TIMESTAMPDIFF(SECOND, MAX(post_date),NOW()) AS timediff, pinged FROM " . $wpdb->prefix . "posts " .
-		" WHERE post_type IN ('post', 'revision') AND " .
-		" ID IN (SELECT object_id FROM " . $wpdb->prefix . "term_relationships WHERE " . $wpdb->prefix . "term_relationships.term_taxonomy_id = " . $catid .") " .
-		" GROUP BY pinged " .
-		" ORDER BY post_date DESC";
-
-		$arrPosts = $wpdb->get_results($sql);
-
-		$sql = " SELECT * " .
-				" FROM " . $this->reversal_table_name;
-
-		$arrReversalsImported = $wpdb->get_results($sql);
-
-		$arrIndexed = $this->get_number_of_entries();
-
-		if(count($arrPosts) > 0)
-		{
-			$countIndexed = 0;
-			$totalImportedPosts = count($this->get_posts());
-
-			foreach($arrPosts as $posts)
-			{
-				if($posts->pinged == "indexed")
-				{
-					$countIndexed = $posts->entryCount;
-				}
-				elseif($posts->pinged == "linksconverted")
-				{
-
-					$countLinksConverted = $posts->entryCount;
-				}
-				else
-				{
-
-					$countImported = $posts->entryCount;
-				}
-			}
-
-			$countIndexed = $countIndexed + $countLinksConverted;
-
-			/*
-			$importFinished = false;
-			if($countIndexed == $totalImportedPosts || $countLinksConverted == $totalImportedPosts)
-			{
-				$importFinished = true;
-			}
-			*/
-			//$status .= "<form method=\"post\" action=\"" . $_SERVER['REQUEST_URI'] . "\">";
-			if(get_option("importStatus") == "importFinished")
-			{
-				if($posts->post_date != NULL)
-				{
-					$status .= "Last import of configured xhtml was at " . $posts->post_date . " (server time)";
-					$status .= "<br>";
-				}
-			}
-			else
-			{
-				if(!get_option("importStatus"))
-				{
-					echo "The import status will display here.<br>";
-				}
-				else
-				{
-					$status .= "Importing... <a href=\"" . $_SERVER['REQUEST_URI']  . "\">refresh page</a><br>";
-					$status .= " You will receive an email when the import has completed. You don't need to stay online.";
-					$status .= "<br>";
-
-					if(get_option("importStatus") == "indexing")
-					{
-						$status .= "Indexing " . $countIndexed . " of " . $totalImportedPosts . " entries";
-
-						$status .= "<br>If you believe indexing has timed out, click here: <input type=\"submit\" name=\"btnReindex\" value=\"Index Search Strings\"/>";
-					}
-					elseif(get_option("importStatus") == "configured")
-					{
-						$status .= $countImported . " entries imported";
-
-						if($arrPosts[0]->timediff > 5)
-						{
-							$status .= "<br>It appears the import has timed out, click here: <input type=\"submit\" name=\"btnRestartImport\" value=\"Restart Import\">";
-						}
-					}
-					elseif(get_option("importStatus") == "importingReversals")
-					{
-						$status .= "<strong>Importing reversals. So far imported: " . count($arrReversalsImported) . " entries.</strong>";
-
-						$status .= "<br>If you believe the import has timed out, click here: <input type=\"submit\" name=\"btnRestartReversalImport\" value=\"Restart Reversal Import\">";
-					}
-					elseif(get_option("importStatus") == "indexingReversals" && count($arrReversalsImported) > 0)
-					{
-						$status .= "<strong>Indexing reversal entries.</strong>";
-
-						$status .= "<br>If you believe indexing has timed out, click here: <input type=\"submit\" name=\"btnIndexReversals\" value=\"Index reversal entries (" . count($arrReversalsImported)  . " left)\"/>";
-					}
-				}
-			}
-
-			if(count($arrIndexed) > 0 && ($countIndexed == $totalImportedPosts || $countLinksConverted == $totalImportedPosts))
-			{
-				$status .= "<br>";
-				$status .= "<div style=\"float: left;\">";
-					$status .= "<strong>Number of indexed entries (by language code):</strong><br>";
-				$status .= "</div>";
-				$status .= "<div style=\"min-width:50px; float: left; margin-left: 5px;\">";
-				$x = 0;
-				foreach($arrIndexed as $indexed)
-				{
-					$status .= "<div style=\"clear:both;\"><div style=\"text-align:right; float:left;\"><nobr>" . $indexed->language_code . ":</nobr></div><div style=\"float:left;\">&nbsp;". $indexed->totalIndexed;
-
-					$arrReversalsFiltered = array_filter($arrReversalsImported, function($el) { return $el->post_id == 0; });
-
-					$sql = "SELECT COUNT(language_code) AS missing " .
-							" FROM " . $this->search_table_name .
-							" WHERE post_id = 0 AND language_code = '" . $indexed->language_code . "'" .
-							" GROUP BY language_code";
-
-					$missingReversals = $wpdb->get_var($sql);
-
-					if($missingReversals > 0)
-					{
-						$status .= " <a href=\"edit.php?page=sil-dictionary-webonary/include/configuration.php&reportMissingSenses=1&languageCode=" . $indexed->language_code . "&language=" . $indexed->language_name . "\" style=\"color:red;\">missing senses for " . $missingReversals . " entries</a>";
-					}
-
-					$status .= "</div></div>";
-				}
-				$status .= "</div>";
-				$status .= "<br style=\"clear:both;\">";
-
-			}
-
-			//$status .= "</form>";
-
-			return $status;
-		}
-		else
-		{
-			return "No entries have been imported yet. <a href=\"" . $_SERVER['REQUEST_URI']  . "\">refresh page</a>";
-		}
-
-		$sql = "SELECT post_date, pinged FROM " . $wpdb->prefix . "posts ".
-		" WHERE post_type IN ('post', 'revision') AND ".
-		" ID IN (SELECT object_id FROM " . $wpdb->prefix . "term_relationships WHERE " . $wpdb->prefix . "term_relationships.term_taxonomy_id = " . $catid .") ".
-		" AND pinged = 'indexed' ".
-		" ORDER BY post_date DESC";
-
-		$arrIndexed = $wpdb->get_results($sql);
-
-		if(count($arrPosts) > 0 || count($arrIndexed) > 0)
-		{
-			if($arrPosts[0]->pinged != "indexed")
-			{
-				$entries = count($arrPosts);
-				if(count($arrIndexed) > 0)
-				{
-					$entries = get_option("totalConfiguredEntries") - count($arrIndexed);
-				}
-
-				$status .= $entries . " of " . get_option("totalConfiguredEntries") . " entries imported (not yet indexed)<br>";
-			}
-			else
-			{
-				$status .= "Indexing " . count($arrIndexed) . " of " . get_option("totalConfiguredEntries") . " entries<br>";
-			}
-			return $status;
-		}
-		else
-		{
-			return "No entries have been imported yet.";
-		}
-	}
-
 	function get_latest_xhtmlfile(){
 		global $wpdb;
 
@@ -771,99 +461,6 @@ class sil_pathway_xhtml_Import extends WP_Importer {
 		}
 	}
 
-	function get_number_of_entries()
-	{
-		global $wpdb;
-
-		//gets the language codes for all entries plus number of indexed entries
-		//(number of reversal entries is not exact, which is why we get reversal entries eeparate)
-		$sql = " SELECT language_code, COUNT(post_id) AS totalIndexed " .
-				" FROM " . $this->search_table_name .
-				" WHERE relevance = 100 " .
-				" GROUP BY language_code ";
-
-		$arrIndexed = $wpdb->get_results($sql);
-
-		$sql = " SELECT language_code, COUNT(language_code) AS totalIndexed " .
-				" FROM " . $this->reversal_table_name .
-				" INNER JOIN $wpdb->terms ON $wpdb->terms.slug = " . $this->reversal_table_name . ".language_code " .
-				" GROUP BY language_code " .
-				" ORDER BY name ASC";
-
-		$arrReversals = $wpdb->get_results($sql);
-
-		$r = 0;
-		$s = 0;
-		foreach($arrIndexed as $indexed)
-		{
-
-			$sqlLangName = "SELECT name as language_name " .
-			" FROM $wpdb->terms " .
-			" WHERE slug = '" . $indexed->language_code . "'";
-
-			$language_name = $wpdb->get_var($sqlLangName);
-
-			$arrIndexed[$r]->language_name = $language_name;
-
-			if($arrReversals[$s]->language_code == $indexed->language_code)
-			{
-				$arrIndexed[$r]->totalIndexed = $arrReversals[$s]->totalIndexed;
-				$s++;
-			}
-			$r++;
-		}
-
-		//legacy code, to count approximate number of reversals before we imported reversal entries into
-		//the reversal table
-		if(count($arrReversals) == 0 && count($arrIndexed) > 0)
-		{
-			$x = 0;
-			$count_posts = count($this->get_posts(''));
-			foreach($arrIndexed as $indexed)
-			{
-				$sql = " SELECT search_strings " .
-					" FROM " . $this->search_table_name .
-					" WHERE language_code = '" . $indexed->language_code . "' " .
-					" AND relevance >= 95 " .
-					" GROUP BY search_strings COLLATE " . COLLATION . "_BIN";
-
-				$arrIndexGrouped = $wpdb->get_results($sql);
-
-				if($count_posts != $indexed->totalIndexed && ($count_posts + 1) != $indexed->totalIndexed)
-				{
-					$arrIndexed[$x]->totalIndexed = count($arrIndexGrouped);
-				}
-				$x++;
-			}
-		}
-
-		return $arrIndexed;
-	}
-
-	function get_posts($index = ""){
-		global $wpdb;
-
-		// @todo: If $headword_text has a double quote in it, this
-		// will probably fail.
-		$sql = "SELECT ID, post_title, post_content, post_parent, menu_order " .
-			" FROM $wpdb->posts " .
-			" INNER JOIN " . $wpdb->prefix . "term_relationships ON object_id = ID " .
-			" WHERE " . $wpdb->prefix . "term_relationships.term_taxonomy_id = " . $this->get_category_id();
-		//using pinged field for not yet indexed
-		$sql .= " AND post_status = 'publish'";
-		if(strlen($index) > 0 && $index != "-")
-		{
-		 $sql .= " AND pinged = '" . $index . "'";
-		}
-		if($index == "-")
-		{
-		 $sql .= " AND pinged = ''";
-		}
-		$sql .= " ORDER BY menu_order ASC";
-
-		return $wpdb->get_results($sql);
-	}
-
 	/**
 	 * Utility function return the post ID given a headword.
 	 * @param string $headword = headword to find
@@ -879,7 +476,7 @@ class sil_pathway_xhtml_Import extends WP_Importer {
 
 		$row = $wpdb->get_row( $sql );
 
-		if(count($row) > 0)
+		if(!empty($row))
 		{
 			$post_id = $wpdb->get_var($sql);
 		}
@@ -921,6 +518,63 @@ class sil_pathway_xhtml_Import extends WP_Importer {
 		return $postid;
 	}
 
+	function get_relevance($classname, $classnameLong)
+	{
+		$relevance = 0;
+
+		if($classname == "mainheadword" || $classname == "lexemeform" || ($classname == "headword" && $classnameLong == "headword_"))
+		{
+			$relevance = $this->headword_relevance;
+		}
+		if($classname == "headword-sub" || $classname == "subentry_headword")
+		{
+			$relevance = $this->headword_relevance - 5;
+		}
+		/*
+		if($classname == "LexemeForm" || $classname == "lexemeform")
+		{
+			$relevance = $this->lexeme_form_relevance;
+		}
+		*/
+		if($classname == "definition" || $classname == "gloss" || $classname == "definitionorgloss")
+		{
+			$relevance = $this->definition_word_relevance;
+		}
+		if($classname == "definition-sub")
+		{
+			$relevance = $this->definition_word_relevance - 5;
+		}
+		if($classname == "example")
+		{
+			$relevance = $this->example_sentences_relevance;
+		}
+		if($classname == "translation")
+		{
+			$relevance = $this->example_sentences_relevance;
+		}
+		if($classname == "variantref-form")
+		{
+			$relevance = $this->variant_form_relevance;
+		}
+		if($classname == "lexsensereference")
+		{
+			$relevance = $this->sense_crossref_relevance;
+		}
+		if($classname == "scientificname")
+		{
+			$relevance = $this->scientific_name_relevance;
+		}
+		if($classname == "plural")
+		{
+			$relevance = $this->plural_relevance;
+		}
+		if($classname == "citationform")
+		{
+			$relevance = $this->citationform_relevance;
+		}
+
+		return $relevance;
+	}
 	function get_user_input() {
 
 		$bytes = apply_filters( 'import_upload_size_limit', wp_max_upload_size() );
@@ -1015,6 +669,104 @@ class sil_pathway_xhtml_Import extends WP_Importer {
 		endif;
 	}
 
+	/*
+	 * This function checks if a character consists of composed characters.
+	 * The search is handled differently if a dictionary has composed characters
+	 * Since there is no way to programmaticaly know if a character is a composed character, we check for length of string and
+	 * if the character is not a composed character, but a special character
+	 * This method is not fool-proof, but it's better to have the majority of dictionaries use the normal search without REGEX if possible
+	 */
+	function hasComposedCharacters() {
+
+		global $wpdb;
+
+		$UTF8_ACCENTS = array(
+				'à' => 'a', 'ȁ' => 'a', 'ấ' => 'a', 'ầ' => 'a', 'ẩ' => 'a', 'ǟ' => 'a', 'ǻ' => 'a', 'ặ' => 'ặ',
+				'ȃ' => 'a', 'ǎ' => 'a', 'ȧ' => 'a', 'ǡ' => 'a', 'ḁ' => 'a', 'ạ' => 'a', 'ả' => 'a',
+				'ô' => 'o', 'ď' => 'd', 'ḟ' => 'f', 'ë' => 'e', 'š' => 's', 'ơ' => 'o', 'ẚ' => 'a',
+				'ß' => 'ss', 'ă' => 'a', 'ř' => 'r', 'ț' => 't', 'ň' => 'n', 'ā' => 'a', 'ķ' => 'k',
+				'ŝ' => 's', 'ỳ' => 'y', 'ņ' => 'n', 'ŋ' => 'n', 'ĺ' => 'l', 'ħ' => 'h', 'ṗ' => 'p',
+				'ó' => 'o', 'ȯ' => 'o', 'ɔ' => 'o', 'ȅ' => 'e', 'ẹ' => 'e', 'ẽ' => 'e', 'ȇ' => 'e', 'ȩ' => 'e',
+				'ḕ' => 'e', 'ḗ' => 'e', 'ḙ' => 'e', 'ḛ' => 'e', 'ḝ' => 'e', 'ı' => 'i', 'ǐ' => 'i', 'ĭ' => 'i',
+				'ɨ' => 'i', 'ṓ' => 'o', 'ǒ' => 'o', 'ǫ' => 'o', 'ȱ' => 'o', 'ȱ' => 'o', 'ṏ' => 'o',
+				'ú' => 'u', 'ě' => 'e', 'é' => 'e', 'ç' => 'c', 'ẁ' => 'w', 'ċ' => 'c', 'õ' => 'o',
+				'ǔ' => 'u', 'ȕ' => 'u', 'ṳ' => 'u', 'ṵ' => 'u', 'ṷ' => 'u', 'ṹ' => 'u', 'ṻ' => 'u',
+				'ṡ' => 's', 'ø' => 'o', 'ģ' => 'g', 'ŧ' => 't', 'ș' => 's', 'ė' => 'e', 'ĉ' => 'c',
+				'ś' => 's', 'î' => 'i', 'ű' => 'u', 'ć' => 'c', 'ę' => 'e', 'ŵ' => 'w', 'ṫ' => 't',
+				'ū' => 'u', 'č' => 'c', 'ö' => 'oe', 'è' => 'e', 'ŷ' => 'y', 'ą' => 'a', 'ł' => 'l',
+				'ų' => 'u', 'ů' => 'u', 'ş' => 's', 'ğ' => 'g', 'ļ' => 'l', 'ƒ' => 'f', 'ž' => 'z',
+				'ẃ' => 'w', 'ḃ' => 'b', 'ɓ' => 'b', 'å' => 'a', 'ì' => 'i', 'ï' => 'i', 'ḋ' => 'd', 'ť' => 't',
+				'ŗ' => 'r', 'ä' => 'ae', 'í' => 'i', 'ŕ' => 'r', 'ê' => 'e', 'ü' => 'ue', 'ò' => 'o', 'ꝍ' => 'o',
+				'ē' => 'e', 'ñ' => 'n', 'ń' => 'n', 'ĥ' => 'h', 'ĝ' => 'g', 'đ' => 'd', 'ĵ' => 'j',
+				'ÿ' => 'y', 'ũ' => 'u', 'ŭ' => 'u', 'ư' => 'u', 'ţ' => 't', 'ý' => 'y', 'ő' => 'o', 'ʉ' => 'u',
+				'â' => 'a', 'ľ' => 'l', 'ẅ' => 'w', 'ż' => 'z', 'ī' => 'i', 'ã' => 'a', 'ġ' => 'g',
+				'ṁ' => 'm', 'ō' => 'o', 'ĩ' => 'i', 'ù' => 'u', 'į' => 'i', 'ź' => 'z', 'á' => 'a',
+				'û' => 'u', 'þ' => 'th', 'ð' => 'dh', 'æ' => 'ae', 'µ' => 'u', 'ĕ' => 'e', 'ɛ' => 'e',
+				'έ' => 'e', 'ἐ' => 'e', 'ἒ' => 'e', 'ἑ' => 'e', 'ἕ'  => 'e', 'ἓ' => 'e', 'ὲ' => 'e', 'ε' => 'e',
+				'À' => 'A', 'Ô' => 'O', 'Ď' => 'D', 'Ḟ' => 'F', 'Ë' => 'E', 'Š' => 'S', 'Ơ' => 'O',
+				'Ă' => 'A', 'Ř' => 'R', 'Ț' => 'T', 'Ň' => 'N', 'Ā' => 'A', 'Ķ' => 'K', 'ə' => 'e',
+				'Ŝ' => 'S', 'Ỳ' => 'Y', 'Ņ' => 'N', 'Ĺ' => 'L', 'Ħ' => 'H', 'Ṗ' => 'P', 'Ó' => 'O',
+				'Ú' => 'U', 'Ě' => 'E', 'É' => 'E', 'Ç' => 'C', 'Ẁ' => 'W', 'Ċ' => 'C', 'Õ' => 'O',
+				'Ṡ' => 'S', 'Ø' => 'O', 'Ģ' => 'G', 'Ŧ' => 'T', 'Ș' => 'S', 'Ė' => 'E', 'Ĉ' => 'C',
+				'Ś' => 'S', 'Î' => 'I', 'Ű' => 'U', 'Ć' => 'C', 'Ę' => 'E', 'Ŵ' => 'W', 'Ṫ' => 'T',
+				'Ū' => 'U', 'Č' => 'C', 'Ö' => 'Oe', 'È' => 'E', 'Ŷ' => 'Y', 'Ą' => 'A', 'Ł' => 'L',
+				'Ų' => 'U', 'Ů' => 'U', 'Ş' => 'S', 'Ğ' => 'G', 'Ļ' => 'L', 'Ƒ' => 'F', 'Ž' => 'Z',
+				'Ẃ' => 'W', 'Ḃ' => 'B', 'Å' => 'A', 'Ì' => 'I', 'Ï' => 'I', 'Ḋ' => 'D', 'Ť' => 'T',
+				'Ŗ' => 'R', 'Ä' => 'Ae', 'Í' => 'I', 'Ŕ' => 'R', 'Ê' => 'E', 'Ü' => 'Ue', 'Ò' => 'O',
+				'Ē' => 'E', 'Ñ' => 'N', 'Ń' => 'N', 'Ŋ' => 'N', 'Ĥ' => 'H', 'Ĝ' => 'G', 'Đ' => 'D', 'Ĵ' => 'J',
+				'Ÿ' => 'Y', 'Ũ' => 'U', 'Ŭ' => 'U', 'Ư' => 'U', 'Ţ' => 'T', 'Ý' => 'Y', 'Ő' => 'O',
+				'Â' => 'A', 'Ľ' => 'L', 'Ẅ' => 'W', 'Ż' => 'Z', 'Ī' => 'I', 'Ã' => 'A', 'Ġ' => 'G',
+				'Ṁ' => 'M', 'Ō' => 'O', 'Ĩ' => 'I', 'Ù' => 'U', 'Į' => 'I', 'Ź' => 'Z', 'Á' => 'A',
+				'Û' => 'U', 'Þ' => 'Th', 'Ð' => 'Dh', 'Æ' => 'Ae', 'Ĕ' => 'E', '…' => '...', '’' => '\'',
+				'–' => '-', '“' => '"', 'ʼ' => '\'', 'ʾ' => '\'', '°' => '', '₁' => '1', '₂' => '2', '₃' => '3',
+				'₄' => '4', '₅' => '5', 'ứ' => 'u', 'ắ' => 'a', 'ố' => 'o', 'ớ' => 'o', 'ệ' => 'e', 'ế' => 'e',
+				'ỏ' => 'o', 'ữ' => 'u', 'ọ' => 'o', 'ị' => 'i', 'ủ' => 'u', 'ổ' => 'o', 'ề' => 'e', 'ỉ' => 'i',
+				'ử' => 'u', 'ể' => 'e', 'ợ' => 'o', 'ộ' => 'o', 'ậ' => 'a', 'ụ' => 'u', 'ừ' => 'u', 'ồ' => 'o',
+				'ỗ' => 'o', 'ặ' => 'a', 'ẻ' => 'e', 'ờ' => 'o', 'ở' => 'o', 'ằ' => 'a', 'ễ' => 'e', 'ự' => 'u',
+				'ỡ' => 'o', 'ỷ' => 'y', 'ẫ' => 'a', 'ỡ' => 'o', '”' => '"', 'ẳ' => 'a', '‘' => '\'', 'ɩ' => 'i',
+				'ʋ' => 'u', ';' => '', 'Ɛ' => 'e', 'Ɔ' => 'o', 'Ʋ' => 'u', 'œ' => 'o', '¢' => 'c', '·' => '.',
+				'ɣ' => 'y', 'ʒ' => 'z', 'Ʒ' => 'z', '•' => '.', '¼' => '4', '²' => '2', '³' => '3', 'ˈ' => '\'',
+				'‑' => '-', 'ꞌ' => '\'', 'ᵐ' => 'm', 'ᵑ' => 'n', 'ⁿ' => 'n', 'ʸ' => 'y', 'ʷ' => 'w', 'ɮ' => 'b',
+				'ɬ' => 'c', 'ʃ' => 'f', 'ɗ' => 'd', 'ƴ' => 'y', 'ʔ' => '?', 'ʁ' => 'b', 'Ɨ' => 'I',
+				'«' => '<', '»' => '>', 'Ɗ' => 'D', 'Ɓ' => 'B', 'Ƴ' => 'Y', 'ǹ' => 'n', ' ' => '-', 'ː' => ':',
+				'O' => 'O', 'ɲ' => 'n', 'ɾ' => 'r', 'ɡ' => 'g', 'ɖ' => 'd', '̀' => '\'', '†' => "t", "ˋ" => "\'",
+				'◦' => 'o', 'ʰ' => 'h', '¡' => '!', 'χ' => 'x', 'ɦ' => 'ɦ', '' => '?', 'Ɖ' => 'D', 'ǝ' => 'e',
+				'Ɩ' => 'l', '' => '?', '&' => 'a', 'ẽ' => 'e', 'Ǔ' => 'U', 'ɥ' => 'u', '½' => '1', '⅓' => '1',
+				'‰' => '%', 'ẽ' => 'e', 'ʜ' => 'H', 'ḭ' => 'i', '¿' => '?', '◊' => 'o'
+		);
+
+
+		$hasComposedCharacters = 0;
+
+		$sql = "SELECT * FROM " . Config::$search_table_name;
+
+		$arrIndex = $wpdb->get_results($sql);
+
+		$countComposedCharacters = 0;
+		$notRoman = 0;
+		foreach($arrIndex as $index)
+		{
+			$search_string = $index->search_strings;
+			$search_string = preg_replace('/\s+/', '', $search_string);
+			$search_string2 = normalizer_normalize($search_string, Normalizer::NFC );
+			if(mb_strlen(trim($search_string), "utf-8") != mb_strlen(trim($search_string2), "auto") && preg_match('/([aeiou])/', $search_string)
+					&& strtr($search_string, $UTF8_ACCENTS) == $search_string)
+			{
+				if(mb_strlen(trim($search_string)) <= 10 && mb_strlen(trim($search_string2), "auto") - mb_strlen(trim($search_string)) >= 5)
+				{
+					$notRoman++;
+				}
+				$countComposedCharacters++;
+			}
+		}
+
+		if($countComposedCharacters > 5 && $notRoman < 10)
+		{
+			$hasComposedCharacters = 1;
+		}
+
+		return $hasComposedCharacters;
+	}
 	/**
 	 * Header for the screen
 	 */
@@ -1049,18 +801,11 @@ class sil_pathway_xhtml_Import extends WP_Importer {
 			$reversals = $this->dom_xpath->query( '(./xhtml:span[contains(@class, "reversal-form")])[1]|(./xhtml:span[contains(@class, "reversalform")])[1]' );
 			if ( $reversals->length > 0 )
 				return;
-
-			//inform the user about which fields are available
-			$arrFieldQueries = $this->getArrFieldQueries(2);
-			foreach($arrFieldQueries as $fieldQuery)
-			{
-				$fields = $this->dom_xpath->query($fieldQuery);
-				if($fields->length == 0 && isset($_POST['chkShowDebug']))
-				{
-					echo "No entries found for the query " . $fieldQuery . "<br>";
-				}
-			}
 		}
+
+		$doc = $this->convert_fieldworks_images_to_wordpress($doc);
+		$doc = $this->convert_fieldworks_audio_to_wordpress($doc);
+		$doc = $this->convert_fieldworks_video_to_wordpress($doc);
 
 		// Find the headword. Should be only 1 headword at most. The
 		// $headword->textContent picks up the value of both the headword and
@@ -1069,9 +814,6 @@ class sil_pathway_xhtml_Import extends WP_Importer {
 		// within the element node." The XHTML for an entry with homograph
 		// number looks like this:
 		// <span class="headword" lang="ii">my headword<span class="xhomographnumber">1</span></span>
-		$doc = $this->convert_fieldworks_images_to_wordpress($doc);
-		$doc = $this->convert_fieldworks_audio_to_wordpress($doc);
-		$doc = $this->convert_fieldworks_video_to_wordpress($doc);
 
 		if($isNewFLExExport)
 		{
@@ -1129,11 +871,7 @@ class sil_pathway_xhtml_Import extends WP_Importer {
 				$headword_text = normalizer_normalize($headword->textContent, Normalizer::NFC );
 			}
 
-			$flexid = "";
-			//if($this->dom_xpath->query('//xhtml:div[@id]', $entry)->length > 0)
-			//{
 			$flexid = $entry->getAttribute("id");
-			//}
 
 			if(strlen(trim($flexid)) == 0)
 			{
@@ -1143,8 +881,6 @@ class sil_pathway_xhtml_Import extends WP_Importer {
 			$entry->removeAttributeNS("http://www.w3.org/1999/xhtml", "");
 
 			$entry_xml = $doc->saveXML($entry, LIBXML_NOEMPTYTAG);
-
-			//echo $entry_xml . "<hr>";
 
 			//this replaces a link like this: <a href="#gcec78a67-91e9-4e72-82d3-4be7b316b268">
 			//to this: <a href="/gcec78a67-91e9-4e72-82d3-4be7b316b268">
@@ -1158,10 +894,6 @@ class sil_pathway_xhtml_Import extends WP_Importer {
 
 			//make all links that are not using onclick (e.g. have format "#">) use the url path
 			$entry_xml = preg_replace('/href="(#)([^"]+)">/', 'href="' . get_bloginfo('wpurl') . '/\\2">', $entry_xml);
-
-			//video character is in utf8mb4 which is currently not supported on the webonary server
-			//therefore we convert it into an image.
-			//$entry_xml = str_replace("🎥", "<img src=\"" . get_bloginfo('wpurl') . "/wp-content/plugins/sil-dictionary-webonary/images/video.png\"/>", $entry_xml);
 
 			$entry_xml = addslashes($entry_xml);
 			$entry_xml = stripslashes($entry_xml);
@@ -1294,57 +1026,40 @@ class sil_pathway_xhtml_Import extends WP_Importer {
 		}
 	}
 
-	//-----------------------------------------------------------------------------//
-
-	/**
-	 * Load the search table for the entry.
-	 * @param <type> $entry = XHTML of the dictionary entry
-	 * @param <type> $post_id = ID of the WordPress post.
-	 * @param <type> $query = the xhtml query
-	 * @param <type> $relevance = weighted importance of this particular string for search results
-	 */
-	function import_xhtml_search( $doc, $post_id, $query, $relevance, $subid = 0 ) {
-
-		$arrStringsForIndexing = array();
-		if($relevance == ($this->headword_relevance - 5))
-		{
-			$subid++;
-		}
-		//$fields = $this->dom_xpath->query( $query, $entry );
-
+	function import_xhtml_classes($postid, $doc)
+	{
 		$xpath = new DOMXPath($doc);
 		$xpath->registerNamespace('xhtml', 'http://www.w3.org/1999/xhtml');
 
-		$fields = $xpath->query($query);
+		$fields = $xpath->query("//span[@class]");
 
-		$index = 0;
-		foreach ( $fields as $field ) {
+		$classnameLong = "";
+		$searchstring = "";
+		$lang = "";
 
-			$language = $field->getAttribute( "lang" );
+		$arrResults = [];
+		$i = 0;
+		foreach($fields as $field)
+		{
+			$langContent = $xpath->query("span[@lang]", $field);
 
-			//if(strlen(trim($language)) == 0 && property_exists($field->childNodes->item(0), 'lang'))
-			if($field->childNodes->length > 0)
+			$classname = $field->getAttribute("class");
+			$classnameLong .= $classname . "_";
+
+			$relevance = $this->get_relevance($classname, $classnameLong);
+
+			foreach($langContent as $content)
 			{
-				if(strlen(trim($language)) == 0 && $field->childNodes->item(0)->hasAttributes())
-				{
-					$language = $field->childNodes->item(0)->getAttribute( "lang" );
-				}
+				$searchstring = $content->textContent;
+				$lang = $content->getAttribute("lang");
+				$arrResult[$classname][$lang][$i] = $searchstring;
+				$this->import_xhtml_search_string($postid, $searchstring, $relevance, $lang, $classname);
 			}
 
-			if(strlen(trim($language)) != 0)
-			{
-				$arrStringsForIndexing[$index] = $field->textContent;
-
-				$this->import_xhtml_search_string($post_id, $field->textContent, $relevance, $language, $subid);
-				$index++;
-			}
-			if($subid > 0)
-			{
-				$subid++;
-			}
+			$i++;
 		}
 
-		return $arrStringsForIndexing;
+		return $arrResult;
 	}
 
 	//-----------------------------------------------------------------------------//
@@ -1357,26 +1072,18 @@ class sil_pathway_xhtml_Import extends WP_Importer {
 	 * @param <type> $search_string = string we want to search for in the post
 	 * @param <int> $relevance = weighted importance of this particular string for search results
 	 */
-	function import_xhtml_search_string( $post_id, $search_string, $relevance, $language_code, $subid = 0) {
+	function import_xhtml_search_string( $post_id, $search_string, $relevance, $language_code, $classname, $subid = 0) {
 		global $wpdb;
-
-		//$language_code = $field->getAttribute("lang");
 
 		// $wdbt->prepare likes to add single quotes around string replacements,
 		// and that's why I concatenated the table name.
 		if(strlen(trim($search_string)) > 0)
 		{
-			if(mb_strlen(trim($search_string), "utf-8") != mb_strlen(trim($search_string), "auto") && preg_match('/([aeiou])/', $search_string)
-					&& strtr($search_string, $this->UTF8_ACCENTS) == $search_string)
-			{
-				echo $search_string . ":" . mb_strlen(trim($search_string), "utf-8") . "|" . mb_strlen(trim($search_string), "auto") . "<br>";
-				update_option("hasComposedCharacters", 1);
-			}
 			$search_string = normalizer_normalize($search_string, Normalizer::NFC );
 			$sql = $wpdb->prepare(
-				"INSERT IGNORE INTO `". $this->search_table_name . "` (post_id, language_code, search_strings, relevance, subid)
-				VALUES (%d, '%s', '%s', %d, %d)",
-				$post_id, $language_code, trim($search_string), $relevance, $subid );
+				"INSERT IGNORE INTO `". Config::$search_table_name . "` (post_id, language_code, search_strings, relevance, class, subid)
+				VALUES (%d, '%s', '%s', %d, '%s', %d)",
+				$post_id, $language_code, trim($search_string), $relevance, $classname, $subid );
 
 				//ON DUPLICATE KEY UPDATE search_strings = CONCAT(search_strings, ' ',  '%s');",
 
@@ -1388,7 +1095,7 @@ class sil_pathway_xhtml_Import extends WP_Importer {
 		if(strstr($search_string,"’"))
 		{
 			$mySearch_string = str_replace("’", "'", $search_string);
-			$this->import_xhtml_search_string( $post_id, $mySearch_string, $relevance, $language_code, $subid);
+			$this->import_xhtml_search_string( $post_id, $mySearch_string, $relevance, $language_code, $classname, $subid);
 		}
 	}
 
@@ -1416,14 +1123,14 @@ class sil_pathway_xhtml_Import extends WP_Importer {
 
 			wp_insert_term(
 				$pos_name,
-				$this->pos_taxonomy,
+				Config::$pos_taxonomy,
 				array(
 					'description' => $pos_name,
 					'slug' => $pos_name
 				)
 			);
 
-			wp_set_object_terms( $post_id, $pos_name, $this->pos_taxonomy, true);
+			wp_set_object_terms( $post_id, $pos_name, Config::$pos_taxonomy, true);
 		}
 	}
 
@@ -1457,64 +1164,58 @@ class sil_pathway_xhtml_Import extends WP_Importer {
 			$sd_numbers = $xpath->query('//span[starts-with(@class, "semantic-domains")]//span[starts-with(@class, "semantic-domain-abbr")]|//span[@class = "semanticdomains"]//span[starts-with(@class, "abbreviation")]/span[not(@class = "writingsystemprefix")]', $semantic_domain);
 			///span[not(@class = "Writing_System_Abbreviation")]
 			$sc = 0;
-			foreach($sd_names as $sd_name)
+			foreach($sd_numbers as $sd_number)
 			{
-				$semantic_domain_language = $sd_name->getAttribute("lang");
-				$domain_name = str_replace("]", "", $sd_name->textContent);
-				$domain_name = str_replace(")", "", $domain_name);
+				$semantic_domain_language = $sd_number->getAttribute("lang");
 
-				$sd_number_text = "";
+				$sd_number_text = str_replace("[", "", $sd_number->textContent);
+				$sd_number_text = str_replace("(", "", $sd_number_text);
+				$sd_number_text = trim(str_replace("-", "", $sd_number_text));
 
-				if(isset($sd_numbers->item($sc)->textContent))
+				$domain_name = $sd_number_text;
+				if(isset($sd_names->item($sc)->textContent))
 				{
-					$sd_number_text = str_replace("[", "", $sd_numbers->item($sc)->textContent);
-					$sd_number_text = str_replace("(", "", $sd_number_text);
-					$sd_number_text = trim(str_replace("-", "", $sd_number_text));
+					$domain_name = $sd_names->item($sc)->textContent;
+					$domain_name = str_replace("]", "", $domain_name);
+					$domain_name = str_replace(")", "", $domain_name);
 
-					$domain_class = $sd_name->getAttribute("class");
-
-					$arrTerm = wp_insert_term(
-						$domain_name,
-						$this->semantic_domains_taxonomy,
-						array(
-							'description' => trim($domain_name),
-							'slug' => $sd_number_text
-						));
-
-						$termid = $wpdb->get_var("
-							SELECT term_id
-							FROM $wpdb->terms
-							WHERE slug = '" . str_replace(".", "-", $sd_number_text) . "'");
-
-
-					if($termid == NULL || $termid == 0)
-					{
-						if (array_key_exists('term_id', $arrTerm))
-						{
-							$termid = $arrTerm['term_id'];
-							$taxonomyid = $arrTerm['term_taxonomy_id'];
-							$terms[$i] = $termid;
-							$i++;
-						}
-					}
-					if($sd_numbers->length > 0)
-					{
-						if($sd_numbers->item($sc) != null)
-						{
-							$this->convert_semantic_domains_to_links($post_id, $doc, $sd_numbers->item($sc), $termid);
-						}
-					}
-					$this->convert_semantic_domains_to_links($post_id, $doc, $sd_name, $termid);
-
-					if(isset($termid))
-					{
-						wp_set_object_terms( $post_id, $domain_name, $this->semantic_domains_taxonomy, true);
-					}
-
-					$arrTerm = null;
-
-					$sc++;
 				}
+
+				$arrTerm = wp_insert_term(
+					$domain_name,
+					Config::$semantic_domains_taxonomy,
+					array(
+						'description' => trim($domain_name),
+						'slug' => $sd_number_text
+					));
+
+					$termid = $wpdb->get_var("
+						SELECT term_id
+						FROM $wpdb->terms
+						WHERE slug = '" . str_replace(".", "-", $sd_number_text) . "'");
+
+				if($termid == NULL || $termid == 0)
+				{
+					if (array_key_exists('term_id', $arrTerm))
+					{
+						$termid = $arrTerm['term_id'];
+						$taxonomyid = $arrTerm['term_taxonomy_id'];
+						$terms[$i] = $termid;
+						$i++;
+					}
+				}
+
+				$this->convert_semantic_domains_to_links($post_id, $doc, $sd_number, $termid);
+				$this->convert_semantic_domains_to_links($post_id, $doc, $sd_names->item($sc), $termid);
+
+				if(isset($termid))
+				{
+					wp_set_object_terms( $post_id, $domain_name, Config::$semantic_domains_taxonomy, true);
+				}
+
+				$arrTerm = null;
+
+				$sc++;
 			}
 		}
 
@@ -1604,7 +1305,7 @@ class sil_pathway_xhtml_Import extends WP_Importer {
 			{
 				$reversal_xml = preg_replace('/href="(#)([^"]+)"/', 'href="' . get_bloginfo('wpurl') . '/\\2"', $postentry);
 			}
-			$sql = "SELECT id FROM " . $this->reversal_table_name . " ORDER BY id+0 DESC LIMIT 0,1 ";
+			$sql = "SELECT id FROM " . Config::$reversal_table_name . " ORDER BY id+0 DESC LIMIT 0,1 ";
 
 			$lastid = $wpdb->get_var($sql);
 
@@ -1681,7 +1382,7 @@ class sil_pathway_xhtml_Import extends WP_Importer {
 
 					//$doc->removeAttributeNS("http://www.w3.org/1999/xhtml", "");
 
-					$sql = "SELECT id, reversal_head FROM " . $this->reversal_table_name;
+					$sql = "SELECT id, reversal_head FROM " . Config::$reversal_table_name;
 					$sql .= " WHERE ";
 					if(strpos($postentry, "reversalindexentry") > 0)
 					{
@@ -1709,19 +1410,20 @@ class sil_pathway_xhtml_Import extends WP_Importer {
 
 						$pinyin = new Pinyin();
 						$reversal_browsehead = $pinyin->sentence($reversal_head);
+						$browseletter = substr($reversal_browsehead, 0, 1);
 					}
 
 					if($existing_entry == NULL)
 					{
 						$sql = $wpdb->prepare(
-								"INSERT IGNORE INTO `". $this->reversal_table_name . "` (id, language_code, reversal_head, reversal_content, sortorder, browseletter)
+								"INSERT IGNORE INTO `". Config::$reversal_table_name . "` (id, language_code, reversal_head, reversal_content, sortorder, browseletter)
 								VALUES('%s', '%s', '%s', '%s', %d, '%s')",
 								$id, $reversal_language, $reversal_browsehead, $reversal_xml, $entry_counter, $browseletter);
 					}
 					else
 					{
 						$sql = $wpdb->prepare(
-								"UPDATE " . $this->reversal_table_name . "
+								"UPDATE " . Config::$reversal_table_name . "
 								SET reversal_content = '%s',
 								browseletter = '%s'
 								WHERE reversal_head = '%s' AND language_code = '%s' AND $id = '%s'",
@@ -1733,13 +1435,12 @@ class sil_pathway_xhtml_Import extends WP_Importer {
 				}
 				if($post_id == 0)
 				{
-					echo "PostId for '" . $headword_text . "' not found.<br>";
-					//we want to display the sense, not the reversal word in the "missing senses" report
-					////$reversal_head = $headword_text;
+					error_log("PostId for '" . $headword_text . "' not found.");
 				}
-				$this->import_xhtml_search_string( $post_id, $reversal_head, $this->headword_relevance, $reversal_language, 0);
+				$this->import_xhtml_search_string( $post_id, $reversal_head, $this->headword_relevance, $reversal_language, "reversalform", 0);
 
 				$headwordCount++;
+
 			}
 			$entry_counter++;
 		}
@@ -1771,7 +1472,7 @@ class sil_pathway_xhtml_Import extends WP_Importer {
 		$headword_text = trim($entry->textContent);
 
 		//this is used for the browse view sort order
-		$sql = "UPDATE " . $this->search_table_name . " SET sortorder = " . $entry_counter . " WHERE search_strings = '" . addslashes($headword_text) . "' COLLATE '" . COLLATION . "_BIN' AND relevance >= 95";
+		$sql = "UPDATE " . Config::$search_table_name . " SET sortorder = " . $entry_counter . " WHERE search_strings = '" . addslashes($headword_text) . "' COLLATE '" . COLLATION . "_BIN' AND relevance >= 95";
 		$wpdb->query( $sql );
 
 		//this is used for the search sort order
@@ -1864,12 +1565,12 @@ class sil_pathway_xhtml_Import extends WP_Importer {
 	{
 		global $wpdb;
 
-		$search_table_exists = $wpdb->get_var( "show tables like '$this->search_table_name'" ) == $this->search_table_name;
-		$pos_taxonomy_exists = taxonomy_exists( $this->pos_taxonomy );
-		$semantic_domains_taxonomy_exists = taxonomy_exists( $this->semantic_domains_taxonomy );
+		$search_table_exists = $wpdb->get_var( "show tables like '" . Config::$search_table_name . "'" ) == Config::$search_table_name;
+		$pos_taxonomy_exists = taxonomy_exists( Config::$pos_taxonomy );
+		$semantic_domains_taxonomy_exists = taxonomy_exists( Config::$semantic_domains_taxonomy );
 
 		if ( $search_table_exists ) {
-			$arrPosts = $this->get_posts('-');
+			$arrPosts = Webonary_Info::posts('-');
 
 			$subid = 1;
 
@@ -1883,7 +1584,7 @@ class sil_pathway_xhtml_Import extends WP_Importer {
 				$subentry = false;
 				if ( $post->ID ){
 
-					$sql = $wpdb->prepare("DELETE FROM `". $this->search_table_name . "` WHERE post_id = %d", $post->ID);
+					$sql = $wpdb->prepare("DELETE FROM `". Config::$search_table_name . "` WHERE post_id = %d", $post->ID);
 
 					$wpdb->query( $sql );
 					//set as indexed
@@ -1898,70 +1599,11 @@ class sil_pathway_xhtml_Import extends WP_Importer {
 				$xpath = new DOMXPath($doc);
 				$xpath->registerNamespace('xhtml', 'http://www.w3.org/1999/xhtml');
 
-				$arrFieldQueries = $this->getArrFieldQueries(2);
-
-				$headword = $xpath->query($arrFieldQueries[0])->item(0);
-
 				$this->import_xhtml_show_progress( $entry_counter, $entries_count, $post->post_title, "Step 2 of 2: Indexing Search Strings");
 
 				if($post->post_parent == 0)
 				{
-					if(isset($headword))
-					{
-						$headword_text = $headword->textContent;
-						$headword_language = $headword->getAttribute( "lang" );
-						if(strlen(trim($headword_language)) == 0)
-						{
-							$itemNr = 0;
-							while(strlen(trim($headword_language)) == 0)
-							{
-								$headword_language = $headword->childNodes->item($itemNr)->getAttribute( "lang" );
-								$itemNr++;
-							}
-						}
-					}
-					else
-					{
-						$headword_text = "?";
-						$headword_language = get_option("languagecode");
-					}
-
-					if(strlen(trim($headword_language)) == 0)
-					{
-						echo "<span style=color:red;>";
-							echo $headword_text . ": ";
-							echo "No language attribute found<br>";
-						echo "</span>";
-					}
-
-					//import headword
-					//$this->import_xhtml_search_string($post->ID, $headword_text, $this->headword_relevance, $headword_language, $subid);
-					$this->import_xhtml_search($doc, $post->ID, $arrFieldQueries[0], ($this->headword_relevance), $subid);
-					//sub headwords
-					$this->import_xhtml_search($doc, $post->ID, $arrFieldQueries[1], ($this->headword_relevance - 5), $subid);
-					//lexeme forms
-					$this->import_xhtml_search($doc, $post->ID, $arrFieldQueries[2], $this->lexeme_form_relevance);
-					//definitions
-					$this->import_xhtml_search($doc, $post->ID, $arrFieldQueries[3], $this->definition_word_relevance);
-					//sub definitions
-					$this->import_xhtml_search($doc, $post->ID, $arrFieldQueries[4], ($this->definition_word_relevance - 5));
-					//example sentences
-					$this->import_xhtml_search($doc, $post->ID, $arrFieldQueries[5], $this->example_sentences_relevance);
-					//Translation of example sentences
-					$this->import_xhtml_search($doc, $post->ID, $arrFieldQueries[6], $this->example_sentences_relevance);
-					//custom fields
-					$this->import_xhtml_search($doc, $post->ID, $arrFieldQueries[7], $this->custom_field_relevance);
-					//variant forms
-					$this->import_xhtml_search($doc, $post->ID, $arrFieldQueries[8], $this->variant_form_relevance);
-					$this->import_xhtml_search($doc, $post->ID, $arrFieldQueries[9], $this->variant_form_relevance);
-					//cross references
-					$this->import_xhtml_search($doc, $post->ID, $arrFieldQueries[10], $this->sense_crossref_relevance);
-					//scientific names
-					$this->import_xhtml_search($doc, $post->ID, $arrFieldQueries[11], $this->scientific_name);
-					//plurals
-					$this->import_xhtml_search($doc, $post->ID, $arrFieldQueries[12], $this->plural);
-					//citation form
-					$this->import_xhtml_search($doc, $post->ID, $arrFieldQueries[13], $this->citationform);
+					$this->import_xhtml_classes($post->ID, $doc);
 				}
 				else
 				{
@@ -1969,7 +1611,7 @@ class sil_pathway_xhtml_Import extends WP_Importer {
 				}
 
 				//this is used for the browse view sort order, no longer needed for
-				$sql = "UPDATE " . $this->search_table_name . " SET sortorder = " . $post->menu_order . " WHERE post_id = " . $post->ID . " AND relevance >= 95 AND sortorder = 0" ;
+				$sql = "UPDATE " . Config::$search_table_name . " SET sortorder = " . $post->menu_order . " WHERE post_id = " . $post->ID . " AND relevance >= 95 AND sortorder = 0" ;
 				$wpdb->query( $sql );
 
 				/*
@@ -1989,7 +1631,24 @@ class sil_pathway_xhtml_Import extends WP_Importer {
 				$entry_counter++;
 			}
 
+			$this->update_relevance();
 			update_option("importStatus", "importFinished");
+		}
+	}
+
+	function update_relevance()
+	{
+		global $wpdb;
+
+		$tableCustomRelevance = $wpdb->prefix . "custom_relevance";
+
+		$arrClasses = $wpdb->get_results ("SELECT class, relevance FROM $tableCustomRelevance");
+
+		if (count ($arrClasses) > 0) {
+			foreach($arrClasses as $class)
+			{
+				$wpdb->query ("UPDATE " . Config::$search_table_name . " SET relevance = ". $class->relevance ." WHERE class = '".$class->class."'");
+			}
 		}
 	}
 
@@ -2005,9 +1664,9 @@ class sil_pathway_xhtml_Import extends WP_Importer {
 	// in production settings. The post_max_size apparently needs to be at least as big as the
 	// upload_max_files setting. If the file size is bigger than the limit, the server simply will not
 	// upload it, and there is no indication to the user as to what happened.
-
 	function upload_files( $which_file, $filetype = "",  $reversalLang = "") {
 		global $wpdb;
+		$upload_dir = wp_upload_dir();
 
 		$hasError = false;
 
@@ -2016,25 +1675,29 @@ class sil_pathway_xhtml_Import extends WP_Importer {
 			return $file;
 		}
 
+		if( $_FILES[$which_file]["name"] == "ProjectDictionaryOverrides.css" || $_FILES[$which_file]["name"] == "ProjectReversalOverrides.css" )
+		{
+			unlink($upload_dir['path'] . "/" .  $_FILES[$which_file]["name"]);
+		}
+
 		$overrides = array( 'test_form' => false, 'test_type' => false );
 		$file = wp_handle_upload( $_FILES[$which_file], $overrides );
 
-
 		if ( isset( $file['error'] ) )
+		{
 			return $file;
+		}
 
 		$url = $file['url'];
 		$type = $file['type'];
 		$file = addslashes( $file['file'] );
-		$filename = basename( $file );
+		$filename = $_FILES[$which_file]["name"];
 
 		$info = pathinfo($file);
 		$extension = $info['extension'];
 
 		if($extension == "css")
 		{
-			$upload_dir = wp_upload_dir();
-			echo "upload_dir: " . $upload_dir['url'] . "<br>";
 			$target_path = $upload_dir['path'] . "/imported-with-xhtml.css";
 
 			if($filename == "ProjectDictionaryOverrides.css")
@@ -2069,7 +1732,7 @@ class sil_pathway_xhtml_Import extends WP_Importer {
 			error_reporting(E_ALL);
 			if((copy($from_path, $target_path) || $from_path == $target_path) && $hasError == false) {
 
-				$fontClass = new fontMonagment();
+				$fontClass = new fontManagment();
 				$fontClass->set_fontFaces($target_path, $upload_dir['path']);
 
 				_e('The css file has been uploaded into your upload folder:<br>' . $target_path . '<br>');
@@ -2103,6 +1766,11 @@ class sil_pathway_xhtml_Import extends WP_Importer {
 		}
 
 		return array( 'file' => $file, 'id' => $id );
+	}
+
+	function my_cust_filename($dir, $name, $ext){
+		echo "<b>" . $name.$ext . "</b><br>";
+		return $name.$ext;
 	}
 
 } // class

@@ -1,16 +1,29 @@
 <?php
+use Overtrue\Pinyin\Pinyin;
+
+function disable_plugins($plugins){
+
+	$key = array_search( 'qtranslate-x/qtranslate.php' , $plugins );
+	if ( false !== $key ) unset( $plugins[$key] );
+
+	return $plugins;
+}
 if(exec('echo EXEC') == 'EXEC' && file_exists($argv[1] . "exec-configured.txt") && isset($argv))
 {
 	define('WP_INSTALLING', true);
 
-
-
 	require($argv[1] . "wp-load.php");
 	switch_to_blog($argv[2]);
+	require($argv[1] . "wp-content/plugins/sil-dictionary-webonary/include/configuration.php");
+	require($argv[1] . "wp-content/plugins/sil-dictionary-webonary/include/class_info.php");
+	require($argv[1] . "wp-content/plugins/sil-dictionary-webonary/include/class_utilities.php");
+
 	require($argv[1] . "wp-content/plugins/sil-dictionary-webonary/include/infrastructure.php");
 	install_sil_dictionary_infrastructure();
 
 	require($argv[1] . "wp-content/plugins/sil-dictionary-webonary/include/xhtml-importer.php");
+
+	add_filter( 'option_active_plugins', 'disable_plugins' );
 
 	//it isn't actually from the api, but saves us renaming the variable to "background" or something like that...
 	$api = true;
@@ -33,6 +46,10 @@ global $wpdb;
 
 if(isset($xhtmlFileURL))
 {
+	//if using Docker
+	if (strpos($xhtmlFileURL, 'localhost:8000') !== false) {
+		$xhtmlFileURL = str_replace("localhost:8000", $_SERVER['SERVER_ADDR'], $xhtmlFileURL);
+	}
 	$path_parts = pathinfo($xhtmlFileURL);
 
 	$uploadPath = $path_parts['dirname'];
@@ -53,7 +70,8 @@ if(isset($xhtmlFileURL))
 	 * Import
 	 */
 
-	$import->search_table_name = $wpdb->prefix . 'sil_search';
+
+	Config::$search_table_name = $wpdb->prefix . 'sil_search';
 
 	$current_user = wp_get_current_user();
 
@@ -113,6 +131,18 @@ if(isset($xhtmlFileURL))
 				$letterHead = $reader->readInnerXml();
 				$letterLanguage = $reader->getAttribute("lang");
 
+				if(($letterLanguage == "zh-CN" || $letterLanguage == "zh-Hans-CN"))
+				{
+					require_once( $argv[1] . 'wp-content/plugins/sil-dictionary-webonary/include/pinyin/src/Pinyin.php' );
+					require_once( $argv[1] . 'wp-content/plugins/sil-dictionary-webonary/include/pinyin/src/DictLoaderInterface.php' );
+					require_once( $argv[1] . 'wp-content/plugins/sil-dictionary-webonary/include/pinyin/src/FileDictLoader.php' );
+
+					$pinyin = new Pinyin();
+					$letterHead = $pinyin->sentence($letterHead);
+					$letterHead = substr($letterHead, 0, 1);
+					$letterHead = strtolower($letterHead);
+				}
+
 				//if($letterHead != "?")
 				//{
 					if(strpos($letterHead, " ") > 0)
@@ -126,7 +156,7 @@ if(isset($xhtmlFileURL))
 						$letter = $letterHead;
 					}
 
-					if (!in_array($letter, $arrLetters)) {
+					if (!in_array($letter, $arrLetters) && strlen(trim($letter)) > 0) {
 						$arrLetters[$a] = $letter;
 						$a++;
 					}
@@ -164,7 +194,7 @@ if(isset($xhtmlFileURL))
 					}
 					elseif($filetype == 'reversal')
 					{
-						$import->reversal_table_name = $wpdb->prefix . 'sil_reversals';
+						Config::$reversal_table_name = $wpdb->prefix . 'sil_reversals';
 						$entry_counter = $import->import_xhtml_reversal_indexes($postentry, $entry_counter, $letter);
 					}
 					else
@@ -229,6 +259,8 @@ if(isset($xhtmlFileURL))
 
 		$import->index_searchstrings();
 
+		update_option("hasComposedCharacters", $import->hasComposedCharacters());
+
 		$message = "The import of the vernacular (configured) xhtml export is completed.\n";
 		$message .= "Go here to configure more settings: " . get_site_url() . "/wp-admin/admin.php?page=webonary";
 
@@ -251,9 +283,11 @@ if(isset($xhtmlFileURL))
 		{
 			$reversalLang = str_replace($uploadPath . "/reversal_", "", $xhtmlFileURL);
 			$reversalLang = str_replace(".xhtml", "", $reversalLang);
+			$reversalLang = str_replace("_", "-", $reversalLang);
 		}
 
 		$reversalAlphabetOption = "reversal1_alphabet";
+
 		if(get_option('reversal1_langcode') != $reversalLang)
 		{
 			$reversalAlphabetOption = "reversal2_alphabet";
@@ -327,7 +361,7 @@ if(isset($xhtmlFileURL))
 				$xhtmlFileURL = $fileReversal1;
 				error_log($filetype . "#" . $xhtmlFileURL);
 
-				require(ABSPATH . "wp-content/plugins/sil-dictionary-webonary/include/run_import.php");
+				require($argv[1] . "wp-content/plugins/sil-dictionary-webonary/include/run_import.php");
 			}
 		}
 		else

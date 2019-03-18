@@ -1,11 +1,29 @@
 <?php
+class Config
+{
+	/*
+	 * Table and taxonomy attributes
+	 */
+
+	public static $search_table_name = SEARCHTABLE;
+	public static $reversal_table_name = REVERSALTABLE;
+	public static $pos_taxonomy = 'sil_parts_of_speech';
+	public static $semantic_domains_taxonomy = 'sil_semantic_domains';
+}
 /**
  * Set up the SIL Dictionary in WordPress Dashboard Tools
  */
 function add_admin_menu() {
-	add_menu_page( "Webonary", "Webonary", true, "webonary", "webonary_conf_dashboard",  get_bloginfo('wpurl') . "/wp-content/plugins/sil-dictionary-webonary/images/webonary-icon.png", 76 );
-	add_submenu_page('edit.php', 'Missing Senses', 'Missing Senses', 3, __FILE__, 'report_missing_senses');
-	remove_submenu_page('edit.php', 'sil-dictionary-webonary/include/configuration.php');
+
+	$data = get_userdata( get_current_user_id() );
+	$role = ( array ) $data->roles;
+
+	if ( $role[0] == "editor" || $role[0] == "administrator" || is_super_admin())
+	{
+		add_menu_page( "Webonary", "Webonary", 'edit_pages', "webonary", "webonary_conf_dashboard",  get_bloginfo('wpurl') . "/wp-content/plugins/sil-dictionary-webonary/images/webonary-icon.png", 76 );
+		add_submenu_page('edit.php', 'Missing Senses', 'Missing Senses', 3, __FILE__, 'report_missing_senses');
+		remove_submenu_page('edit.php', 'sil-dictionary-webonary/include/configuration.php');
+	}
 }
 
 function on_admin_bar(){
@@ -92,6 +110,104 @@ function get_LanguageCodes($languageCode = null) {
 	return $wpdb->get_results($sql, 'ARRAY_A');
 }
 
+function relevanceForm()
+{
+	global $wpdb;
+
+	$sql = "SELECT class AS classname, relevance
+		FROM " . $wpdb->prefix . "sil_search
+		GROUP BY class
+		ORDER BY relevance DESC";
+
+	$arrClasses = $wpdb->get_results($sql);
+
+?>
+<form action="admin.php?page=webonary#search" method="post" enctype="multipart/form-data">
+<h1>Relevance Settings for Fields</h1>
+<p>
+The search returns results based on relevance. That is, if the word you are looking for is found in a headword, that will be more important than finding the word in a definition for another word.
+</p>
+<p>
+Normally you don't need to change anything here. But if you import a custom field, it will be imported with a relevance of zero in which case you have the option to change the relevance setting.
+</p>
+<?php
+	if(!isset($arrClasses[0]->classname))
+	{
+		echo "<strong>You need to reimport this dictionary if you want to change the relevance settings.</strong>";
+		return false;
+	}
+	echo "<ul>";
+	foreach($arrClasses as $class)
+	{
+		if(strpos($class->classname, "abbr") !== false || strpos($class->classname, "partofspeech") !== false || strpos($class->classname, "name") !== false || (strpos($class->classname, "headword") !== false && $class->relevance == 0))
+		{
+			continue;
+		}
+		echo "<li><div><strong>" . $class->classname . ": </strong></div>";
+		if($class->relevance == 100 && (strpos($class->classname, "headword") !== false || strpos($class->classname, "lexemeform") !== false || strpos($class->classname, "reversalform") !== false))
+		{
+			echo $class->relevance;
+		}
+		else
+		{
+		?>
+			<div>
+			<input type="hidden" name=classname[] value="<?php echo $class->classname; ?>">
+			<input type="text" name=relevance[] size=5 value="<?php echo $class->relevance; ?>">
+			</div>
+		<?php
+		}
+		echo "</li>";
+	}
+	echo "</ul>";
+	?>
+<p>
+	<input type="submit" name="btnSaveRelevance" value="Save">
+</p>
+</form>
+<?php
+}
+
+function relevanceSave()
+{
+	global $wpdb;
+
+	$tableCustomRelevance = $wpdb->prefix . "custom_relevance";
+
+	$r = 0;
+	foreach($_POST['classname'] as $class)
+	{
+
+		if($_POST['relevance'][$r] < 0 || $_POST['relevance'][$r] > 99 || !is_numeric($_POST['relevance'][$r]))
+		{
+			echo "<span style=\"color: red;\">Relevance has to be >= 0 and < 100 for all fields!</span><br>";
+			return false;
+		}
+		//echo $class . ": " . $_POST['relevance'][$r] . "<br>";
+
+		$wpdb->query ("UPDATE " . $wpdb->prefix . "sil_search SET relevance = ". $_POST['relevance'][$r] ." WHERE class = '".$class."'");
+
+		$result = $wpdb->get_results ("SELECT relevance FROM $tableCustomRelevance WHERE class = '".$class."'");
+
+		if (count ($result) > 0) {
+			$wpdb->query ("UPDATE $tableCustomRelevance SET relevance = ". $_POST['relevance'][$r] ." WHERE class = '".$class."'");
+		} else {
+			$wpdb->query ("INSERT INTO $tableCustomRelevance (class, relevance) VALUES ('".$class."'," . $_POST['relevance'][$r] . ")");
+		}
+
+		$wpdb->query($sql);
+		$r++;
+	}
+
+	$wpdb->print_error();
+
+	if($wpdb->last_error === '')
+	{
+		echo "<h3>Relevance Settings were saved.</h3>";
+	}
+	echo "<hr>";
+}
+
 //display the senses that don't get linked in the reversal browse view
 function report_missing_senses()
 {
@@ -132,6 +248,7 @@ function save_configurations() {
 	if ( ! empty( $_POST['save_settings'])) {
 		update_option("publicationStatus", $_POST['publicationStatus']);
 		update_option("include_partial_words", $_POST['include_partial_words']);
+		update_option("searchSomposedCharacters", $_POST['search_composed_characters']);
 		//update_option("distinguish_diacritics", $_POST['distinguish_diacritics']);
 		if(isset($_POST['normalization']))
 		{
@@ -290,7 +407,7 @@ function webonary_conf_widget($showTitle = false) {
 
 	$upload_dir = wp_upload_dir();
 
-	$fontClass = new fontMonagment();
+	$fontClass = new fontManagment();
 	$css_string = null;
 	$configured_css_file = $upload_dir['basedir'] . '/imported-with-xhtml.css';
 	if(file_exists($configured_css_file))
@@ -300,6 +417,26 @@ function webonary_conf_widget($showTitle = false) {
 	$arrUniqueCSSFonts = $fontClass->get_fonts_fromCssText($css_string);
 	wp_register_style('custom_css', $upload_dir['baseurl'] . '/custom.css?time=' . date("U"));
 	wp_enqueue_style( 'custom_css');
+
+	if(is_super_admin() && isset($_POST['uploadButton']))
+	{
+		$fontClass->uploadFontForm();
+	}
+
+	if(isset($_GET['changerelevance']))
+	{
+		relevanceForm();
+	}
+
+	if(isset($_POST['uploadFont']))
+	{
+		$fontClass->uploadFont();
+	}
+
+	if(isset($_POST['btnSaveRelevance']))
+	{
+		relevanceSave();
+	}
 	?>
 	<script src="<?php echo get_bloginfo('wpurl'); ?>/wp-content/plugins/sil-dictionary-webonary/js/options.js" type="text/javascript"></script>
 	<style>
@@ -381,19 +518,16 @@ function webonary_conf_widget($showTitle = false) {
 
 			$import = new sil_pathway_xhtml_Import();
 			?>
+			<form id="configuration-form" method="post" action="">
 			<p>
 			<h3><?php _e( 'Import Data', 'sil_dictionary' ); ?></h3>
 
 			<div style="max-width: 600px; border-style:solid; border-width: 1px; border-color: red; padding: 5px;">
-			<form enctype="multipart/form-data" id="import-upload-form" method="post" action="<?php echo esc_attr(
-				wp_nonce_url("admin.php?import=pathway-xhtml&amp;step=1", 'import-upload')); ?>">
-			<strong>Import Status:</strong> <?php echo $a; echo $import->get_import_status(); ?>
-			</form>
+			<strong>Import Status:</strong> <?php echo Webonary_Info::import_status(); ?>
 			</div>
 
 			<p><?php _e('<a href="admin.php?import=pathway-xhtml" style="font-size:16px;">Click here to import your FLEx data</a>', 'sil_dictionary'); ?></p>
 
-			<form id="configuration-form" method="post" action="">
 			<p>
 			<?php _e('Publication status:'); ?>
 			<select name=publicationStatus>
@@ -449,15 +583,15 @@ function webonary_conf_widget($showTitle = false) {
 						<?php _e('Always include searching through partial words.'); ?>
 			<br>
 			<?php
-			/*
-			?>
-			<input name="distinguish_diacritics" type="checkbox" value="1"
-						<?php checked('1', get_option('distinguish_diacritics')); ?> />
-						<?php _e('Distinguish diacritic letters'); ?>
-			</p>
-			<?php */ ?>
-			<p>
+			if(get_option('hasComposedCharacters') == 1)
+			{
+			 ?>
+			 <input name="search_composed_characters" type="checkbox" value="1"
+						<?php checked('1', get_option('searchSomposedCharacters')); ?> />
+						Search for composed characters using base characters (<a href="https://www.webonary.org/searching-for-composed-characters-using-base-characters/" target="_blank">help</a>)
+			<br>
 			<?php
+			}
 			//this is only for legacy purposes.
 			//Now the import will convert all text to NFC, so this is no longer needed for newer imports
 			if(get_option("normalization") != null)
@@ -516,6 +650,8 @@ function webonary_conf_widget($showTitle = false) {
 			}
 			?>
 			</select>
+			<br><br>
+			<a href="?page=webonary&changerelevance=true#search">Relevance Settings for Fields</a>
 			<br><br>
 			<?php admin_section_end('search', 'Save Changes'); ?>
 			<?php
@@ -583,7 +719,7 @@ function webonary_conf_widget($showTitle = false) {
 				}
 				?>
 				</select>
-
+				<p>
 				<input name="vernacularRightToLeft" type="checkbox" value="1" <?php checked('1', get_option("vernacularRightToLeft")); ?> /><?php _e('Display right-to-left') ?>
 
 				<p>
@@ -770,15 +906,16 @@ function webonary_conf_widget($showTitle = false) {
 		}
 		$options = get_option('themezee_options');
 
-		$fontClass->getFontsAvailable($arrFontName, $arrFontStorage, $arrHasSubFonts);
+		$arrFont = $fontClass->getFontsAvailable();
 
 		if(isset($arrUniqueCSSFonts))
 		{
+			$fontNr = 0;
 			foreach($arrUniqueCSSFonts as $userFont)
 			{
 				$userFont = trim($userFont);
 
-				$fontKey = array_search($userFont, $arrFontName);
+				$fontKey = array_search($userFont, array_column($arrFont, 'name'));
 
 				if(!strstr($userFont, "default font"))
 				{
@@ -789,17 +926,17 @@ function webonary_conf_widget($showTitle = false) {
 						if(in_array($userFont, $arrFontFacesFile))
 						{
 							$fontLinked = true;
-							echo "linked in <a href=\"" . $upload_dir['baseurl'] . "/custom.css\">custom.css</a><br>";
+							echo "linked in <a href=\"" . $upload_dir['baseurl'] . "/custom.css\">custom.css</a>";
 						}
 					}
 
 					if($fontLinked)
 					{
-						if($fontKey > 0)
+						if($fontKey !== false)
 						{
-							if($arrHasSubFonts[$fontKey])
+							if($arrFont[$fontKey]["hasSubFonts"])
 							{
-								echo "<span style=\"color:orange; font-weight: bold;\">This web font is very large and will take a long time to load! Please use a <a href=\"https://www.webonary.org/help/setting-up-a-font/\" target=\"_blank\" style=\"color:orange; font-weight:bold;\">font subset</a> if possible.</span><br>";
+								echo "<span style=\"color:orange; font-weight: bold;\">This web font is very large and will take a long time to load! Please use a <a href=\"https://www.webonary.org/help/setting-up-a-font/\" target=\"_blank\" style=\"color:orange; font-weight:bold;\">font subset</a> if possible.</span>";
 							}
 						}
 					}
@@ -825,6 +962,16 @@ function webonary_conf_widget($showTitle = false) {
 							echo "</strong>";
 						}
 					}
+
+					if(is_super_admin() && !in_array($userFont, $arrSystemFonts))
+					{
+					?>
+							<input type="hidden" name="fontname[<?php echo $fontNr; ?>]" value="<?php echo $userFont; ?>">
+							<input type="submit" value="Upload" name="uploadButton[<?php echo $fontNr; ?>]">
+					<?php
+						$fontNr++;
+					}
+
 					echo "<p></p>";
 				}
 			}
@@ -841,7 +988,7 @@ function webonary_conf_widget($showTitle = false) {
 		<p>
 		<span style="color:red">These notes are only visible to super admins.</span>
 		<p>
-		<textarea name=txtNotes cols=60 rows=8><?php echo stripslashes(get_option("notes"));?></textarea>
+		<textarea name=txtNotes cols=50 rows=6><?php echo stripslashes(get_option("notes"));?></textarea>
 		<p>
 		Hide search form: <input name="noSearchForm" type="checkbox" value="1" <?php checked('1', get_option("noSearch")); ?> />
 		<p>

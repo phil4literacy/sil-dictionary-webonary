@@ -20,6 +20,10 @@ function categories_func( $atts )
 			}
 		}
 	}
+
+	$upload_dir = wp_upload_dir();
+	wp_register_style('configured_stylesheet', $upload_dir['baseurl'] . '/imported-with-xhtml.css?time=' . date("U"));
+	wp_enqueue_style( 'configured_stylesheet');
 ?>
 	<style>
 	   TD {font-size: 9pt; font-family: arial,helvetica; text-decoration: none; font-weight: bold;}
@@ -169,6 +173,11 @@ add_shortcode( 'categories', 'categories_func' );
 function displayAlphabet($alphas, $languagecode)
 {
 	global $wpdb;
+
+	if(trim($alphas[0]) == "" && is_front_page())
+	{
+		return "";
+	}
 ?>
 	<style type="text/css">
 	.lpTitleLetterCell {min-width:31px; height: 23px; padding-top: 3px; padding-bottom: 2px; text-bottom; text-align:center;background-color: #EEEEEE;border:1px solid silver; position: relative;}
@@ -203,8 +212,8 @@ function displayAlphabet($alphas, $languagecode)
 
 	foreach($alphas as $letter)
 	{
-		$display .= "<div class=\"lpTitleLetterCell\"><span class=lpTitleLetter>";
-		if(trim($letter[0]) == "")
+		$display .= "<div class=\"lpTitleLetterCell\"><span>";
+		if(trim($letter[0]) == "" && !is_front_page())
 		{
 			$display .= "<a href=\"" . get_site_url() . "/wp-admin/admin.php?page=webonary#browse\" style=\"padding:2px;\">Alphabet not configured</a>";
 		}
@@ -216,7 +225,7 @@ function displayAlphabet($alphas, $languagecode)
 				$lang = "&lang=" . $_GET['lang'];
 			}
 
-			$display .= "<a href=\"" . $permalink . "?letter=" . stripslashes($letter) . "&key=" . $languagecode . $lang . "\">" . stripslashes($letter) . "</a>";
+			$display .= "<a class=lpTitleLetter href=\"" . $permalink . "?letter=" . stripslashes($letter) . "&key=" . $languagecode . $lang . "\">" . stripslashes($letter) . "</a>";
 		}
 		$display .= "</span></div>";
 	}
@@ -372,29 +381,30 @@ function englishalphabet_func( $atts, $content, $tag ) {
 
 add_shortcode( 'englishalphabet', 'englishalphabet_func');
 
+
+function get_has_reversalbrowseletters()
+{
+	global $wpdb;
+
+	$result = $wpdb->get_results("SHOW COLUMNS FROM " . REVERSALTABLE . " LIKE 'browseletter'");
+	$exists = (count($result))?TRUE:FALSE;
+
+	return $exists;
+}
+
+function getPostsPerPage()
+{
+	$posts_per_page = 25;
+	if(get_option( 'posts_per_page' ) > $posts_per_page)
+	{
+		$posts_per_page = get_option('posts_per_page');
+	}
+
+	return $posts_per_page;
+}
+
 function getReversalEntries($letter = "", $page, $reversalLangcode = "", &$displayXHTML = true, $reversalnr)
 {
-?>
-	<style>
-	<?php
-	if(get_option('reversal' . $reversalnr . 'RightToLeft') == 1)
-	{
-	?>
-		#searchresults {
-		text-align: right;
-		}
-		.lpTitleLetterCell {float:right;}
-	<?php
-	}
-	else
-	{
-	?>
-	.lpTitleLetterCell {float:left;}
-	<?php
-	}
-	?>
-	</style>
-<?php
 	if(strlen($reversalLangcode) === 0 && $reversalnr > 0)
 	{
 		return null;
@@ -414,7 +424,7 @@ function getReversalEntries($letter = "", $page, $reversalLangcode = "", &$displ
 	if($letter != "")
 	{
 		//new imports use the letter header from FLEx for grouping
-		if(get_has_reversalbrowseletters() > 0)
+		if(get_has_reversalbrowseletters())
 		{
 			$sql .= " AND browseletter =  '" . $letter . "' " . $collate;
 		}
@@ -546,10 +556,35 @@ function reversalindex($display, $chosenLetter, $langcode, $reversalnr = "")
 	.odd { background: #CCCCCC; };
 	.even { background: #FFF; };
 	</style>
+	<style>
+	<?php
+	if(get_option('reversal' . $reversalnr . 'RightToLeft') == 1)
+	{
+	?>
+		#searchresults {
+		text-align: right;
+		}
+		.lpTitleLetterCell {float:right;}
+	<?php
+	}
+	else
+	{
+	?>
+	.lpTitleLetterCell {float:left;}
+	<?php
+	}
+	?>
+	</style>
 <?php
 	$upload_dir = wp_upload_dir();
 	//wp_register_style('reversal_stylesheet', '/files/reversal_' . $langcode . '.css?time=' . date("U"));
-	wp_register_style('reversal_stylesheet', $upload_dir['baseurl'] . '/reversal_' . $langcode . '.css?time=' . date("U"));
+	$reversalCSSFile = 'reversal_' . $langcode . '.css';
+	if(!file_exists($upload_dir['baseurl'] . '/' . $reversalCSSFile))
+	{
+		$reversalCSSFile = str_replace('-', '_', $reversalCSSFile);
+	}
+
+	wp_register_style('reversal_stylesheet', $upload_dir['baseurl'] . '/' . $reversalCSSFile . '?time=' . date("U"));
 	wp_enqueue_style( 'reversal_stylesheet');
 
 	$page = $_GET['pagenr'];
@@ -645,6 +680,87 @@ function reversalindex($display, $chosenLetter, $langcode, $reversalnr = "")
 	return $display;
 }
 
+function getNoLetters($chosenLetter, $alphas)
+{
+	//if for example somebody searches for "k", but there is also a letter 'kp' in the alphabet then
+	//words starting with kp should not appear
+	$noLetters = "";
+	foreach($alphas as $alpha)
+	{
+		$alpha = trim($alpha);
+
+		if($chosenLetter != "?")
+		{
+			if(preg_match("/" . $chosenLetter . "/i", $alpha) && $chosenLetter != stripslashes($alpha) && strtoupper($chosenLetter) != strtoupper($alpha))
+			{
+				if(strlen($noLetters) > 0)
+				{
+					$noLetters .= ",";
+				}
+				$noLetters .= $alpha;
+			}
+		}
+	}
+	return $noLetters;
+}
+
+function getVernacularEntries($letter = "", $langcode = "", $page)
+{
+	global $wpdb;
+
+	$collate = "COLLATE " . COLLATION . "_BIN"; //"COLLATE 'UTF8_BIN'";
+	if(get_option('IncludeCharactersWithDiacritics') == 1)
+	{
+		$collate = "";
+	}
+
+	$startFrom = 0;
+	$postsperpage = getPostsPerPage();
+	if($page > 1)
+	{
+		$startFrom = ($page - 1) * $postsperpage;
+	}
+
+	$sql = "SELECT SQL_CALC_FOUND_ROWS ID, post_content ";
+    $sql .= " FROM $wpdb->posts ";
+	$sql  .= " WHERE post_content_filtered = '" . $letter ."' " . $collate . " AND post_content_filtered != '' ";
+	$sql .= " ORDER BY menu_order ASC";
+	$sql .= " LIMIT " . $startFrom .", " . $postsperpage;
+
+	$arrEntries = $wpdb->get_results($sql);
+
+	//for legacy browse views, where we didn't use the fields post_content_filtered and menu_order
+	if(count($arrEntries) == 0)
+	{
+
+		$sql = "SELECT SQL_CALC_FOUND_ROWS ID, post_title, post_content, search_strings ";
+		$sql .= " FROM $wpdb->posts ";
+		$sql .= " JOIN " . SEARCHTABLE . " ON $wpdb->posts.ID = " . SEARCHTABLE . ".post_id ";
+		$sql .= " WHERE LOWER(search_strings) LIKE '" . strtolower($letter) . "%' " . $collate . " AND language_code = '" . $langcode . "' AND relevance >= 95";
+
+		$alphas = explode(",",  get_option('vernacular_alphabet'));
+		$chosenLetter = get_letter($alphas[0]);
+
+		$noletters = getNoLetters($chosenLetter, $alphas);
+		$arrNoLetters = explode(",",  $noletters);
+		foreach($arrNoLetters as $noLetter)
+		{
+			if(strlen($noLetter) > 0)
+			{
+				$sql .= " AND " . SEARCHTABLE . ".search_strings NOT LIKE '" . $noLetter ."%' " . $collate .
+				" AND " . SEARCHTABLE . ".search_strings NOT LIKE '" . strtoupper($noLetter) ."%' " . $collate;
+			}
+		}
+
+		$sql .= " ORDER BY sortorder ASC, search_strings ASC";
+		$sql .= " LIMIT " . $startFrom .", " . $postsperpage;
+
+		$arrEntries = $wpdb->get_results($sql);
+	}
+
+	return $arrEntries;
+}
+
 function getVernacularHeadword($postid, $languagecode)
 {
 	global $wpdb;
@@ -677,6 +793,7 @@ function get_letter($firstLetterOfAlphabet = "") {
 
 function vernacularalphabet_func( $atts )
 {
+	global $wpdb;
 ?>
 	<style>
 		.lpTitleLetterCell {float:left;}
@@ -723,26 +840,6 @@ function vernacularalphabet_func( $atts )
 			return $display;
 		}
 
-		//if for example somebody searches for "k", but there is also a letter 'kp' in the alphabet then
-		//words starting with kp should not appear
-		$noLetters = "";
-		foreach($alphas as $alpha)
-		{
-			$alpha = trim($alpha);
-
-			if($chosenLetter != "?")
-			{
-				if(preg_match("/" . $chosenLetter . "/i", $alpha) && $chosenLetter != stripslashes($alpha))
-				{
-					if(strlen($noLetters) > 0)
-					{
-						$noLetters .= ",";
-					}
-					$noLetters .= $alpha;
-				}
-			}
-		}
-
 		$display .= "<div id=searchresults>";
 
 		$displaySubentriesAsMinorEntries = true;
@@ -755,7 +852,20 @@ function vernacularalphabet_func( $atts )
 			$displaySubentriesAsMinorEntries = true;
 		}
 
-		$arrPosts = query_posts("s=a&letter=" . $chosenLetter . "&noletters=" . $noLetters . "&langcode=" . $languagecode . "&posts_per_page=25&paged=" . $_GET['pagenr'] . "&DisplaySubentriesAsMainEntries=" . $displaySubentriesAsMinorEntries);
+		//$arrPosts = query_posts("s=a&letter=" . $chosenLetter . "&noletters=" . $noLetters . "&langcode=" . $languagecode . "&posts_per_page=" . $posts_per_page . "&paged=" . $_GET['pagenr'] . "&DisplaySubentriesAsMainEntries=" . $displaySubentriesAsMinorEntries);
+		$arrPosts = getVernacularEntries($chosenLetter, $languagecode, $_GET['pagenr']);
+
+		if(!isset($_GET['totalEntries']))
+		{
+			$sql = "SELECT FOUND_ROWS()";
+
+			$totalEntries = $wpdb->get_var($sql);
+		}
+		else
+		{
+			$totalEntries = $_GET['totalEntries'];
+		}
+
 
 		if(count($arrPosts) == 0)
 		{
@@ -790,18 +900,8 @@ function vernacularalphabet_func( $atts )
 
 		$display .= "</div>";
 
-		if(!isset($_GET['totalEntries']))
-		{
-			global $wp_query;
-			$totalEntries = $wp_query->found_posts;
-		}
-		else
-		{
-			$totalEntries = $_GET['totalEntries'];
-		}
-
 		$display .= "<div align=center><br>";
-		$display .= displayPagenumbers($chosenLetter, $totalEntries, 25, $languagecode);
+		$display .= displayPagenumbers($chosenLetter, $totalEntries, getPostsPerPage(), $languagecode);
 		$display .= "</div><br>";
 	}
  	wp_reset_query();

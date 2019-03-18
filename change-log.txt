@@ -1,3 +1,58 @@
+v. 8.2.2 18 March 2019 changed way we check if browseletter column exists
+v. 8.2.1 12 March 2019 refactored search and fixed partial search issue
+v. 8.2.0 6 March 2019 fixed reversal css file issue with using hyphen instead of underscore
+v. 8.1.9 6 March 2019 fixed issue importing reversal alphabet if hyphen in language code
+v. 8.1.8 5 March 2019 simplified code for search
+v. 8.1.7 27 February 2019 fixed issue with searching for whole words and matching accents
+v. 8.1.6 21 February 2019 fixed issue with Webonary Dashboard
+v. 8.1.5 21 February 2019 fixed issue of number of entries not showing in import status box
+v. 8.1.4 21 February 2019 faster sql query of number of reversal entries using RIGHT JOIN
+v. 8.1.3 21 February 2019 fixed wrong display of number of reversal entries if same language name
+v. 8.1.2 20 February 2019 made language_code database field bigger
+v. 8.1.1 20 February 2019 fixed CSS issue so that individual entries can show right-to-left
+v. 8.1.0 19 February 2019 "Alphabet not configured" message no longer displays on front-page
+v. 8.0.9 18 February 2018 removed getArrFieldQueries method as well as headword indexing that are no longer needed
+v. 8.0.8 14 February 2018 added link to archive file
+v. 8.0.7 12 February 2018 put vernacular browse view queries inside browseview_func.php and removed from dictionary_search.php
+v. 8.0.6 6 February 2019 fixed "Advanced Search" link issue in Safari
+v. 8.0.5 5 February 2019 added option "Search for composed characters using base characters"
+v. 8.0.4 4 February 2019 posts per page can be made bigger than 25 (default)
+v. 8.0.3 4 February 2019 added form for changing relevance
+v. 8.0.2 1 February 2019 all headwords that are a minorentry get a relevance of 100, but not subentries, etc.
+v. 8.0.1 31 January 2019 variant headwords get indexed again
+v. 8.0.0 30 January 2019 all classes (including custom fields) now get imported
+v. 7.9.9 28 January 2019 mistakenly committed experimental version. Undid this.
+v. 7.9.8 25 January 2019 counts entries on Dashboard also if pinged is "linksconverted" (for legacy purposes)
+v. 7.9.7 23 January 2019 allowing editors to upload dictionary data
+v. 7.9.6 23 January 2019 made Webonary menu item visible for editors
+v. 7.9.5 21 January 2019 removed fixed width for right-to-left postentry
+v. 7.9.4 16 January 2019 super admins can now upload fonts to the repository
+v. 7.9.3 10 January 2019 font info now gets saved in font.json
+v. 7.9.2 10 January 2019 refactored getFontsAvailable to return array
+v. 7.9.1 10 January 2019 letter header gets converted to pinyin if it's Chinese Hanzi
+v. 7.9.0 3 January 2019 added language parameter to filter query API
+v. 7.8.9 1 January 2019 did some refactoring, created class Webonary_Utility
+v. 7.8.8 27 December 2018 experimenting with custom API endpoint for queries
+v. 7.8.7 20 December 2018 added option to distinguish words starting with lower-case and upper-case in browse view
+v. 7.8.6 20 December 2018 changed grouping to fix issue with subentries in browse view
+v. 7.8.5 12 December 2018 $xhtmlFileURL gets replaced when running in Docker
+v. 7.8.4 11 December 2018 semantic domains now import even if only domain numbers are checked
+v. 7.8.3 7 December 2018 fixed bug causing ProjectDictionaryOverrides.css not to be overwritten
+v. 7.8.2 6 December 2018 changed load order of imported-with-xhtml.css (loads after theme's style.css)
+v. 7.8.1 5 December 2018 refactored import_status
+v. 7.8.0 5 December 2018 "found in semantic domains" now also displays the number
+v. 7.7.9 29 November 2018 added function hasComposedCharacters
+v. 7.7.8 28 November 2018 refactoring of import_status
+v. 7.7.7 26 November 2018 API sends email again when import finished
+v. 7.7.6 26 November 2018 added try/catch for thumbnail conversion
+v. 7.7.5 20 November 2018 code cleanup: extracted several methods into separate class Info
+v. 7.7.4 19 November 2018 changed the thumbnail generation size from 96px to 150px
+v. 7.7.3 13 November 2018 fixed issue with empty search string
+v. 7.7.2 2 November 2018 Upload to Webonary from FLEx now uses built-in API
+v. 7.7.1 2 November 2018 fixed bug causing empty search to do weird things
+v. 7.7.0 2 November 2018 fixed issue of language name not displaying in dropdown selection
+v. 7.6.9 1 November 2018 added aUI font to repository
+v. 7.6.8 30 October 2018 added query_vars_filter, added search tests
 v. 7.6.7 16 October 2018 import checks if dictionary has composed characters
 v. 7.6.6 11 October 2018 added more unit tests
 v. 7.6.5 09 October 2018 fixed issue that caused browse view on front page to display too slow
